@@ -1,0 +1,29 @@
+QuantBackTest/
+├── README.md
+├── Makefile
+├── build/
+│   └── (compiled files)
+├── data/
+│   ├── sample_data.csv
+│   └── config.ini
+├── src/
+│   ├── main.cpp
+│   ├── core.h
+│   ├── data_manager.h
+│   ├── data_manager.cpp
+│   ├── strategy_framework.h
+│   ├── strategy_framework.cpp
+│   ├── backtest_engine.h
+│   ├── backtest_engine.cpp
+│   ├── performance_analytics.h
+│   ├── performance_analytics.cpp
+│   ├── optimization_framework.h
+│   ├── optimization_framework.cpp
+│   ├── report_generator.h
+│   ├── report_generator.cpp
+│   ├── utils.h
+│   └── utils.cpp
+└── test/
+    ├── test_data.cpp
+    ├── test_strategy.cpp
+    └── test_backtest.cpp
