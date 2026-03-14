@@ -5,9 +5,9 @@
 | **Project Title** | Algorithmic Trading Strategy Backtester with Chatbot |
 |---|---|
 | **Course** | Programming for Business (C++) |
-| **Semester** | Spring 2026 |
-| **Instructor** | Muhammad Tehaam |
-| **Submission Date** | 28th February 2026 |
+| **Semester** | Spring 2026 (2nd Semester) |
+| **Instructor** | Muhammad Tehaam (From FAST University, Islamabad) |
+| **Submission Date** | February to May 2026 |
 
 ---
 
