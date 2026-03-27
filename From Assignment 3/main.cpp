@@ -18,7 +18,7 @@ int main() {
     cout << "\t\t   ╚═╝ ╚═╝ ╚═╝  ╚══██║  ╚═══╝  ╚═════╝                    " << endl;
     cout << "\t\t                 ████║                                    " << endl;
     cout << "\t\t                 ╚═══╝                                   " << endl;
-    cout << "\t\t" << gold << "  ALGO-B: ALGORITHMIC BACKTESTER (V3.0) " << cyan << "" << endl;
+    cout << "\t\t" << gold << "      ALGORITHMIC BACKTESTER (V3.0) " << cyan << "" << endl;
     cout << reset << endl;
 
     receiveData();

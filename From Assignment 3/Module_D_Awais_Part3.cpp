@@ -202,6 +202,24 @@ void startChatbot() {
         else if (userCmd == "totalreturn" || userCmd == "profit") {
             cout << "Stats: Total Return is " << totalReturn << "% and Annual is " << annualReturn << "%." << endl;
         } 
+        else if (userCmd == "sharpe") {
+            cout << "Sharpe Ratio: " << sharpe << endl;
+        }
+        else if (userCmd == "drawdown") {
+            cout << "Max Drawdown: " << drawdown << "%" << endl;
+        }
+        else if (userCmd == "losing") {
+            cout << "Losing Trades: " << losses << " (Avg Loss: $" << avgLoss << ")" << endl;
+        }
+        else if (userCmd == "winning") {
+            cout << "Winning Trades: " << wins << " (Avg Profit: $" << avgProfit << ")" << endl;
+        }
+        else if (userCmd == "tradecount") {
+            cout << "Total Trades: " << totalTrades << endl;
+        }
+        else if (userCmd == "winrate") {
+            cout << "Win Rate: " << winRate << "%" << endl;
+        }
         else if (userCmd == "equity") {
             drawEquityCurve();
         }
@@ -212,7 +230,7 @@ void startChatbot() {
             calculateRating();
         } 
         else if (userCmd == "help") {
-            cout << "Available: profit, sharpe, drawdown, winning, losing, winrate, compare, equity, exit" << endl;
+            cout << "Available: totalreturn, profit, sharpe, drawdown, losing, winning, tradecount, winrate, compare, equity, help, exit" << endl;
         } 
         else {
             cout << "Type 'help' for the list of commands." << endl;
