@@ -18,7 +18,7 @@
 | Member A   | Sarah Shabbir     | 25i-5554       | Data Loader & Structures       |
 | Member B   | Syed Ayan Ali     | 25i-5639       | Indicators & Signal Generation |
 | Member C   | Syed Hamza        | 25i-5558       | Backtest Engine & Metrics      |
-| Member D   | Awais Qasim       | 25i-5647       | Reporting & Algothrihum Chatbot            |
+| Member D   | Awais Qasim       | 25i-5647       | Reporting & Algo-Chatbot            |
 
 ---
 
