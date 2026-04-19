@@ -1,7 +1,31 @@
 #include <iostream>
 using namespace std;
 
-#include "Module_D_Awais_Part4.cpp"
+const int METRICS_COUNT = 11;
+
+double** loadMarketData(string filename, int& rows, int& cols);
+void displayMarketTable(double** matrix, int rows);
+void unloadMarketData(double** matrix, int rows);
+int* generateSignals(double* prices, int daysCount);
+void runBacktest(
+    const double* prices,
+    const int* signals,
+    int daysCount,
+    double initialCapital,
+    double initialShares,
+    double previousPortfolio,
+    double* outMetrics
+);
+void setModuleCData(double* metrics);
+void displaySummary();
+void showVisualChart();
+void drawEquityCurve();
+void startChatbot();
+
+#include "Module_A.cpp"
+#include "Module_B.cpp"
+#include "Module_C.cpp"
+#include "Module_D.cpp"
 
 int main() {
     system("chcp 65001 > nul");
@@ -14,27 +38,51 @@ int main() {
     cout << "\t\t                 ████║                     " << endl;
     cout << "\t\t                 ╚═══╝                     " << endl;
     
-// Passing simulated results from Module C using an Array
-    double finalMetrics[10];
-    finalMetrics[0] = 10000.0;     // Initial Capital
-    finalMetrics[1] = 13636.4;     // Final Value
-    finalMetrics[2] = 36.3636;     // Total Return
-    finalMetrics[3] = 36.3636;     // Annualized Return
-    finalMetrics[4] = 1.0;         // Sharpe Ratio
-    finalMetrics[5] = 0.0;         // Drawdown
-    finalMetrics[6] = 100.0;       // Win Rate
-    finalMetrics[7] = 3636.36;     // Average Profit
-    finalMetrics[8] = 0.0;         // Average Loss
-    finalMetrics[9] = 0.0;         // Profit Factor
-    
-    int trades = 1;
+    string filename;
+    cout << "\n[System] Enter Market Data File (e.g., BitcoinYTD.csv): ";
+    cin >> filename;
 
-    // Call the integrated function using pointers (arrays pass as pointers natively)
-    setModuleCData(finalMetrics, trades);
+    int rows = 0;
+    int cols = 0;
+    double** marketData = loadMarketData(filename, rows, cols);
+    if (marketData == NULL || rows <= 0) {
+        cout << "Failed to load market data. Program exiting." << endl;
+        return 1;
+    }
+
+    displayMarketTable(marketData, rows);
+
+    double* closePrices = new double[rows];
+    for (int i = 0; i < rows; i++) {
+        closePrices[i] = marketData[i][3];
+    }
+
+    int* signals = generateSignals(closePrices, rows);
+
+    double finalMetrics[METRICS_COUNT];
+    double initialCapital = 10000.0;
+    double initialShares = 0.0;
+    double previousPortfolio = initialCapital;
+
+    runBacktest(
+        closePrices,
+        signals,
+        rows,
+        initialCapital,
+        initialShares,
+        previousPortfolio,
+        finalMetrics
+    );
+
+    setModuleCData(finalMetrics);
     displaySummary();
     drawEquityCurve();
     showVisualChart();
     startChatbot();
+
+    delete[] signals;
+    delete[] closePrices;
+    unloadMarketData(marketData, rows);
     
     cout << "\nProgram terminated. Goodbye, Have a Nice Trading Journey!" << endl;
     

@@ -5,21 +5,33 @@ using namespace std;
 double capital, finalVal, totalReturn, annualReturn, sharpe, drawdown, winRate, avgProfit, avgLoss, profitFactor;
 int totalTrades, wins, losses;
 
-// Integrating data using Pointers and Arrays instead of struct or user input
-void setModuleCData(double* metrics, int trades) {
-    // metrics array maps exactly to: [capital, finalVal, totalReturn, annualReturn, sharpe, drawdown, winRate, avgProfit, avgLoss, profitFactor]
-    capital = metrics[0];
-    finalVal = metrics[1];
-    totalReturn = metrics[2];
-    annualReturn = metrics[3];
-    sharpe = metrics[4];
-    drawdown = metrics[5];
-    winRate = metrics[6];
-    avgProfit = metrics[7];
-    avgLoss = metrics[8];
-    profitFactor = metrics[9];
-    
-    totalTrades = trades;
+void setModuleCData(double* metrics) {
+    if (metrics == 0) return;
+
+    const int IDX_INITIAL_CAPITAL = 0;
+    const int IDX_FINAL_VALUE = 1;
+    const int IDX_TOTAL_RETURN_PCT = 2;
+    const int IDX_ANNUAL_RETURN_PCT = 3;
+    const int IDX_SHARPE = 4;
+    const int IDX_DRAWDOWN_PCT = 5;
+    const int IDX_TOTAL_TRADES = 6;
+    const int IDX_WIN_RATE_PCT = 7;
+    const int IDX_AVG_PROFIT = 8;
+    const int IDX_AVG_LOSS = 9;
+    const int IDX_PROFIT_FACTOR = 10;
+
+    capital = metrics[IDX_INITIAL_CAPITAL];
+    finalVal = metrics[IDX_FINAL_VALUE];
+    totalReturn = metrics[IDX_TOTAL_RETURN_PCT];
+    annualReturn = metrics[IDX_ANNUAL_RETURN_PCT];
+    sharpe = metrics[IDX_SHARPE];
+    drawdown = metrics[IDX_DRAWDOWN_PCT];
+    totalTrades = (int)metrics[IDX_TOTAL_TRADES];
+    winRate = metrics[IDX_WIN_RATE_PCT];
+    avgProfit = metrics[IDX_AVG_PROFIT];
+    avgLoss = metrics[IDX_AVG_LOSS];
+    profitFactor = metrics[IDX_PROFIT_FACTOR];
+
     wins = (int)((winRate / 100.0) * totalTrades + 0.5);
     losses = totalTrades - wins;
 }

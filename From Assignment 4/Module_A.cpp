@@ -1,12 +1,10 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-
 using namespace std;
 
-double** loadMarketData(int &rows, int &cols) {
+double** loadMarketData(string filename, int &rows, int &cols) {
     
-    string filename = "BitcoinYTD.csv";
     ifstream countFile(filename);
     rows = 0;
     cols = 5;
@@ -40,7 +38,6 @@ double** loadMarketData(int &rows, int &cols) {
         size_t start = 0;
         size_t end = line.find(',');
         
-        // We read 6 segments (Date + 5 Metrics), but only store the last 5
         for (int segmentIdx = 0; segmentIdx < 6; segmentIdx++) {
             string segment;
             if (end != string::npos) {
@@ -51,10 +48,8 @@ double** loadMarketData(int &rows, int &cols) {
                 segment = line.substr(start);
             }
             
-            // Skip the first segment (which is the Date string)
             if (segmentIdx == 0) continue;
 
-            // Map segment 1-5 to matrix column 0-4
             int matrixCol = segmentIdx - 1;
 
             bool isNumeric = !segment.empty();
@@ -103,12 +98,4 @@ void unloadMarketData(double** matrix, int rows) {
     }
     delete[] matrix;
     cout << "[Module A] Memory Released." << endl;
-}
-
-int main() {
-    int r, c;
-    double** data = loadMarketData(r, c);
-    displayMarketTable(data, r);
-    unloadMarketData(data, r);
-    return 0;
 }
