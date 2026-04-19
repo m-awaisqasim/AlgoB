@@ -29,12 +29,19 @@ double** loadMarketData(int &rows, int &cols) {
 
     ifstream dataFile(filename);
     int currentRow = 0;
+    bool isHeader = true;
 
     while (getline(dataFile, line) && currentRow < rows) {
+        if (isHeader || line.empty()) { 
+            isHeader = false; 
+            continue; 
+        }
+
         size_t start = 0;
         size_t end = line.find(',');
         
-        for (int j = 0; j < cols; j++) {
+        // We read 6 segments (Date + 5 Metrics), but only store the last 5
+        for (int segmentIdx = 0; segmentIdx < 6; segmentIdx++) {
             string segment;
             if (end != string::npos) {
                 segment = line.substr(start, end - start);
@@ -44,16 +51,31 @@ double** loadMarketData(int &rows, int &cols) {
                 segment = line.substr(start);
             }
             
-            if (!segment.empty()) {
-                priceMatrix[currentRow][j] = stod(segment);
+            // Skip the first segment (which is the Date string)
+            if (segmentIdx == 0) continue;
+
+            // Map segment 1-5 to matrix column 0-4
+            int matrixCol = segmentIdx - 1;
+
+            bool isNumeric = !segment.empty();
+            for(char c : segment) {
+                if(!isdigit(c) && c != '.' && c != '-') {
+                    isNumeric = false;
+                    break;
+                }
+            }
+
+            if (isNumeric) {
+                priceMatrix[currentRow][matrixCol] = stod(segment);
             } else {
-                priceMatrix[currentRow][j] = 0;
+                priceMatrix[currentRow][matrixCol] = 0;
             }
         }
         currentRow++;
     }
     dataFile.close();
 
+    rows = currentRow; 
     cout << "[Module A] Successfully loaded " << rows << " records from " << filename << endl;
     return priceMatrix;
 }
