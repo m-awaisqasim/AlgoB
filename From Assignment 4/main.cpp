@@ -7,19 +7,11 @@ double** loadMarketData(string filename, int& rows, int& cols);
 void displayMarketTable(double** matrix, int rows);
 void unloadMarketData(double** matrix, int rows);
 int* generateSignals(double* prices, int daysCount);
-void runBacktest(
-    const double* prices,
-    const int* signals,
-    int daysCount,
-    double initialCapital,
-    double initialShares,
-    double previousPortfolio,
-    double* outMetrics
-);
-void setModuleCData(double* metrics);
+void runBacktest(const double* prices, const int* signals, int daysCount, double initialCapital, double initialShares, double previousPortfolio, double results[], double history[]);
+void setModuleCData(double* metrics, double* hist, int count);
 void displaySummary();
 void showVisualChart();
-void drawEquityCurve();
+void drawEquityCurve(double* history, int count);
 void startChatbot();
 
 #include "Module_A.cpp"
@@ -60,28 +52,22 @@ int main() {
     int* signals = generateSignals(closePrices, rows);
 
     double finalMetrics[METRICS_COUNT];
+    double* equityHistory = new double[rows];
     double initialCapital = 10000.0;
     double initialShares = 0.0;
     double previousPortfolio = initialCapital;
 
-    runBacktest(
-        closePrices,
-        signals,
-        rows,
-        initialCapital,
-        initialShares,
-        previousPortfolio,
-        finalMetrics
-    );
+    runBacktest(closePrices, signals, rows, initialCapital, initialShares, previousPortfolio, finalMetrics, equityHistory);
 
-    setModuleCData(finalMetrics);
+    setModuleCData(finalMetrics, equityHistory, rows);
     displaySummary();
-    drawEquityCurve();
+    drawEquityCurve(equityHistory, rows);
     showVisualChart();
     startChatbot();
 
     delete[] signals;
     delete[] closePrices;
+    delete[] equityHistory;
     unloadMarketData(marketData, rows);
     
     cout << "\nProgram terminated. Goodbye, Have a Nice Trading Journey!" << endl;

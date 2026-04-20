@@ -4,9 +4,13 @@ using namespace std;
 
 double capital, finalVal, totalReturn, annualReturn, sharpe, drawdown, winRate, avgProfit, avgLoss, profitFactor;
 int totalTrades, wins, losses;
+double* p_history = 0;
+int h_count = 0;
 
-void setModuleCData(double* metrics) {
+void setModuleCData(double* metrics, double* hist, int cnt) {
     if (metrics == 0) return;
+    p_history = hist;
+    h_count = cnt;
 
     const int IDX_INITIAL_CAPITAL = 0;
     const int IDX_FINAL_VALUE = 1;
@@ -70,59 +74,39 @@ void showVisualChart() {
     delete[] values;
 }
 
-void drawEquityCurve() {
+void drawEquityCurve(double* history, int count) {
     cout << "\n--- Equity Curve (Growth Path) ---" << endl;
-    double peakVal = (capital > finalVal) ? capital : finalVal;
-    double dipVal = peakVal * (1.0 - (drawdown / 100.0));
-    double minVal = (capital < finalVal) ? capital : finalVal;
-    if (dipVal < minVal) minVal = dipVal;
-    double maxVal = peakVal;
+    double minVal = history[0], maxVal = history[0];
+    for (int i = 0; i < count; i++) {
+        if (history[i] < minVal) minVal = history[i];
+        if (history[i] > maxVal) maxVal = history[i];
+    }
     double range = maxVal - minVal;
     if (range < 1) range = 1; 
 
     int rows = 11;
     int cols = 31;
     char** equityGrid = new char*[rows];
-    
     for(int i = 0; i < rows; i++) {
         equityGrid[i] = new char[cols];
-        for(int j = 0; j < cols; j++) {
-            equityGrid[i][j] = ' ';
-        }
+        for(int j = 0; j < cols; j++) equityGrid[i][j] = ' ';
     }
 
     for (int col = 0; col < cols; col++) {
-        double progress = col / 30.0;
-        double estimatedVal;
-        if (progress < 0.4) {
-            estimatedVal = capital + (progress * 2.5 * (peakVal - capital));
-            if (estimatedVal > peakVal) estimatedVal = peakVal;
-        } else if (progress < 0.6) {
-            double dipProgress = (progress - 0.4) / 0.2;
-            estimatedVal = peakVal - (dipProgress * (peakVal - dipVal));
-        } else {
-            double recProgress = (progress - 0.6) / 0.4;
-            estimatedVal = dipVal + (recProgress * (finalVal - dipVal));
-        }
-        int valueRow = (int)(( (estimatedVal - minVal) / range ) * 10);
-        
-        if(valueRow >= 0 && valueRow < rows) {
-            equityGrid[valueRow][col] = '*';
-        }
+        int index = (col * (count - 1)) / (cols - 1);
+        double val = history[index];
+        int valueRow = (int)(((val - minVal) / range) * 10);
+        if(valueRow >= 0 && valueRow < rows) equityGrid[valueRow][col] = '*';
     }
 
     for (int row = rows - 1; row >= 0; row--) {
-        double priceAtRow = minVal + (range * (row / 10.0));
-        cout << "$" << (int)priceAtRow << "\t|";
-        for (int col = 0; col < cols; col++) {
-            cout << equityGrid[row][col];
-        }
+        double priceRow = minVal + (range * (row / 10.0));
+        cout << "$" << (int)priceRow << "\t|";
+        for (int col = 0; col < cols; col++) cout << equityGrid[row][col];
         cout << endl;
     }
     
-    for(int i = 0; i < rows; i++) {
-        delete[] equityGrid[i];
-    }
+    for(int i = 0; i < rows; i++) delete[] equityGrid[i];
     delete[] equityGrid;
 
     cout << "\t+-------------------------------" << endl;
@@ -197,7 +181,7 @@ void startChatbot() {
         else if (userCmd == "winning") cout << "Winning Trades: " << wins << " (Avg Profit: $" << avgProfit << ")" << endl;
         else if (userCmd == "tradecount") cout << "Total Trades: " << totalTrades << endl;
         else if (userCmd == "winrate") cout << "Win Rate: " << winRate << "%" << endl;
-        else if (userCmd == "equity") drawEquityCurve();
+        else if (userCmd == "equity") drawEquityCurve(p_history, h_count);
         else if (userCmd == "compare") showVisualChart();
         else if (userCmd == "history") {
             cout << "\n--- Session Command Logs (Capacity: " << historyCapacity << ") ---" << endl;

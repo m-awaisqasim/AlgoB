@@ -21,7 +21,7 @@ void performFinalCalculations(int days_count, double portfolio_value, double ini
         if (total_loss > 0) profit_factor = total_profit / total_loss;
     }
 
-void runBacktest(const double* prices, const int* signals, int daysCount, double initialCapital, double initialShares, double prevPortfolio, double* outMetrics)
+void runBacktest(const double* prices, const int* signals, int daysCount, double initialCapital, double initialShares, double prevPortfolio, double results[], double history[])
     {
         int days_count = daysCount, signal, total_trades = 0, wins = 0, losses = 0;
     
@@ -60,6 +60,7 @@ void runBacktest(const double* prices, const int* signals, int daysCount, double
                     }
         
                 portfolio_value = cash + (shares * price);
+                history[day] = portfolio_value;
                 if(previous_portfolio != 0) 
                     { daily_return = (portfolio_value - previous_portfolio) / previous_portfolio; } 
                 else 
@@ -79,15 +80,15 @@ void runBacktest(const double* prices, const int* signals, int daysCount, double
             
         performFinalCalculations(days_count, portfolio_value, initial_capital, sum_returns, sum_squared, total_trades, wins, losses, total_profit, total_loss, final_value, total_return, annualized_return, sharpe_ratio, win_rate, avg_profit, avg_loss, profit_factor);
             
-        outMetrics[0] = initial_capital;
-        outMetrics[1] = final_value;
-        outMetrics[2] = total_return * 100.0;
-        outMetrics[3] = annualized_return * 100.0;
-        outMetrics[4] = sharpe_ratio;
-        outMetrics[5] = max_drawdown * 100.0;
-        outMetrics[6] = (double)total_trades;
-        outMetrics[7] = win_rate * 100.0;
-        outMetrics[8] = avg_profit;
-        outMetrics[9] = avg_loss;
-        outMetrics[10] = profit_factor;
+        results[0] = initial_capital;
+        results[1] = final_value;
+        results[2] = total_return * 100.0;
+        results[3] = annualized_return * 100.0;
+        results[4] = sharpe_ratio;
+        results[5] = max_drawdown * 100.0;
+        results[6] = (double)total_trades;
+        results[7] = win_rate * 100.0;
+        results[8] = avg_profit;
+        results[9] = avg_loss;
+        results[10] = profit_factor;
     }
