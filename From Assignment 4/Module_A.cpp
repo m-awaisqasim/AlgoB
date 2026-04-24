@@ -9,16 +9,18 @@ int getLength(string s) {
 }
 
 double** loadMarketData(string filename, int &rows, int &cols) {
-    cout << "\n[Module A] How many days of market data? (Minimum 2): ";
-    cin >> rows;
-    if (rows < 2) {
-        cout << "[Error] Invalid Amount. Please enter a rows number greater than 2: ";
-        cin >> rows;        
-    }
-    
+    do {
+        cout << "\n[Module A] How many days of market data? (Minimum 2): ";
+        cin >> rows;
+        if (rows < 2) cout << " >> Error: You need at least 2 days of data for analysis." << endl;
+    } while (rows < 2);
+
     cols = 5;
     double** priceMatrix = new double*[rows];
-    for (int i = 0; i < rows; i++) priceMatrix[i] = new double[cols];
+    for (int i = 0; i < rows; i++) {
+        priceMatrix[i] = new double[cols];
+    }
+
     cin.ignore();
     cout << "\n[System] You can now PASTE your data rows below:\n";
     for (int i = 0; i < rows; i++) {
@@ -46,9 +48,9 @@ void editMarketData(double** matrix, int rows) {
     char choice;
     cout << "\n[Module A] Do you want to edit any data? (y/n): ";
     cin >> choice;
+
     if (choice == 'y' || choice == 'Y') {
-        int day;
-        int col;
+        int day, col;
         cout << "Enter Day number to edit (1-" << rows << "): ";
         cin >> day;
         cout << "Enter Column (1:Open, 2:High, 3:Low, 4:Close, 5:Vol): ";
@@ -66,16 +68,12 @@ void editMarketData(double** matrix, int rows) {
 }
 
 void displayMarketTable(double** matrix, int rows) {
-    if (matrix == 0) {  
-        return;
-    }
+    if (matrix == 0) return;
     cout << "\nDay\tOpen\tHigh\tLow\tClose\tVolume" << endl;
-    int preview = (rows > 5) ? 5 : rows;
-    for (int i = 0; i < preview; i++) {
+    int previewRows = (rows > 5) ? 5 : rows;
+    for (int i = 0; i < previewRows; i++) {
         cout << i + 1 << "\t";
-        for (int j = 0; j < 5; j++) {
-            cout << matrix[i][j] << "\t";
-        }
+        for (int j = 0; j < 5; j++) cout << matrix[i][j] << "\t";
         cout << endl;
     }
 }

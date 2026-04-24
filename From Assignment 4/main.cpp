@@ -86,7 +86,7 @@ void editMarketData(double** matrix, int rows) {
 }
 
 void displayMarketTable(double** matrix, int rows) {
-    if (matrix == NULL) return;
+    if (matrix == 0) return;
     cout << "\nDay\tOpen\tHigh\tLow\tClose\tVolume" << endl;
     int previewRows = (rows > 5) ? 5 : rows;
     for (int i = 0; i < previewRows; i++) {
@@ -97,7 +97,7 @@ void displayMarketTable(double** matrix, int rows) {
 }
 
 void unloadMarketData(double** matrix, int rows) {
-    if (matrix == NULL) return;
+    if (matrix == 0) return;
     for (int i = 0; i < rows; i++) delete[] matrix[i];
     delete[] matrix;
 }
