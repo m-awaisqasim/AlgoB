@@ -110,7 +110,6 @@ bool startChatbot(double** matrix, int& rows) {
     cout << "+---------------------------------------------------------+" << endl;
 
     cout << "\n > You: ";
-    if (cin.peek() == '\n') cin.ignore();
     while (isActive && getline(cin, userCmd)) {
         for(int i=0; i<getLength(userCmd); i++) {
             if(userCmd[i]>='A' && userCmd[i]<='Z') userCmd[i]+=32;

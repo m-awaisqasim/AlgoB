@@ -315,7 +315,6 @@ bool startChatbot(double** matrix, int& rows) {
     cout << "+---------------------------------------------------------+" << endl;
 
     cout << "\n > You: ";
-    if (cin.peek() == '\n') cin.ignore();
     while (isActive && getline(cin, userCmd)) {
         for(int i=0; i<getLength(userCmd); i++) {
             if(userCmd[i]>='A' && userCmd[i]<='Z') userCmd[i]+=32;
@@ -330,7 +329,7 @@ bool startChatbot(double** matrix, int& rows) {
         else if (findKeyword(userCmd, "win") && !findKeyword(userCmd, "rate")) cout << "Stats: You had " << wins << " winning trades." << endl;
         else if (findKeyword(userCmd, "lose") || findKeyword(userCmd, "losing")) cout << "Stats: You had " << losses << " losing trades." << endl;
         else if (findKeyword(userCmd, "winrate") || findKeyword(userCmd, "accuracy")) cout << "Accuracy: Your Win Rate is " << winRate << "%." << endl;
-        else if (findKeyword(userCmd, "tradecount") || findKeyword(userCmd, "total trades")) cout << "Volume: A total of " << totalTrades << " trades were executed." << endl;
+        else if (findKeyword(userCmd, "tradecount") || findKeyword(userCmd, "trades")) cout << "Volume: A total of " << totalTrades << " trades were executed." << endl;
         else if (findKeyword(userCmd, "help") || findKeyword(userCmd, "menu")) {
             cout << "\n+---------------------------------------------------------+" << endl;
             cout << "|              DYNAMIC COMMAND HELP MENU                  |" << endl;
@@ -350,7 +349,7 @@ bool startChatbot(double** matrix, int& rows) {
             if (profitFactor > 1.3 && totalReturn > 5) cout << " > Success: Solid metrics. This strategy shows good alpha!" << endl;
             if (totalTrades < 5) cout << " > Note: Low sample size. Add more days of data." << endl;
         }
-        else if (findKeyword(userCmd, "edit") || findKeyword(userCmd, "change")) {
+        else if (findKeyword(userCmd, "edit")) {
             editMarketData(matrix, rows);
             displayMarketTable(matrix, rows);
             cout << "\n[System] Type 'retest' to apply these changes." << endl;
