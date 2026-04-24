@@ -327,8 +327,21 @@ bool startChatbot(double** matrix, int& rows) {
             cout << "Analysis: Total Return is " << totalReturn << "% and Annual Profit is Rs." << formatPKR((totalReturn/100)*capital) << "." << endl;
         else if (findKeyword(userCmd, "sharpe")) cout << "Risk-Adjusted: Your Sharpe Ratio is " << sharpe << "." << endl;
         else if (findKeyword(userCmd, "drawdown") || findKeyword(userCmd, "risk")) cout << "Risk: Max Drawdown reached " << drawdown << "% during the test." << endl;
-        else if (findKeyword(userCmd, "win")) cout << "Accuracy: Your Win Rate is " << winRate << "% (" << wins << " wins vs " << losses << " losses)." << endl;
-        else if (findKeyword(userCmd, "trade")) cout << "Volume: A total of " << totalTrades << " trades were executed." << endl;
+        else if (findKeyword(userCmd, "win") && !findKeyword(userCmd, "rate")) cout << "Stats: You had " << wins << " winning trades." << endl;
+        else if (findKeyword(userCmd, "lose") || findKeyword(userCmd, "losing")) cout << "Stats: You had " << losses << " losing trades." << endl;
+        else if (findKeyword(userCmd, "winrate") || findKeyword(userCmd, "accuracy")) cout << "Accuracy: Your Win Rate is " << winRate << "%." << endl;
+        else if (findKeyword(userCmd, "tradecount") || findKeyword(userCmd, "total trades")) cout << "Volume: A total of " << totalTrades << " trades were executed." << endl;
+        else if (findKeyword(userCmd, "help") || findKeyword(userCmd, "menu")) {
+            cout << "\n+---------------------------------------------------------+" << endl;
+            cout << "|              DYNAMIC COMMAND HELP MENU                  |" << endl;
+            cout << "+---------------------------------------------------------+" << endl;
+            for (int i = 0; i < numCats; i++) {
+                cout << " [" << catNames[i] << "]" << endl;
+                for (int j = 0; j < catCounts[i]; j++) cout << "  * " << helpMap[i][j] << endl;
+                cout << endl;
+            }
+            cout << "+---------------------------------------------------------+" << endl;
+        }
         else if (findKeyword(userCmd, "advice") || findKeyword(userCmd, "suggest")) {
             cout << "\n[AlgoB Advice Engine]" << endl;
             if (totalReturn < 0) cout << " > Warning: Strategy is losing money. Try increasing SMA Long Period." << endl;

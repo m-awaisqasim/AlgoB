@@ -151,8 +151,8 @@ bool startChatbot(double** matrix, int& rows) {
             delete[] helpMap; delete[] catNames; delete[] catCounts;
             return true;
         }
-        else if (findKeyword(userCmd, "compare") || findKeyword(userCmd, "chart")) showVisualChart();
-        else cout << "I didn't quite get that. Try asking about 'return', 'win rate', 'risk', or 'advice'." << endl;
+        else if (findKeyword(userCmd, "settings")) configureStrategy(rows);
+        else cout << "Try: return, winning, losing, advice, edit, retest, help" << endl;
         if (isActive) cout << "\n > You: ";
     }
     for (int i = 0; i < numCats; i++) delete[] helpMap[i];
