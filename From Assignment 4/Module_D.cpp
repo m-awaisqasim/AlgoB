@@ -2,40 +2,42 @@
 #include <string>
 using namespace std;
 
+void editMarketData(double** matrix, int rows);
+void displayMarketTable(double** matrix, int rows);
+void configureStrategy();
+
 double capital, finalVal, totalReturn, annualReturn, sharpe, drawdown, winRate, avgProfit, avgLoss, profitFactor;
 int totalTrades, wins, losses;
 double* p_history = 0;
 int h_count = 0;
 
+bool findKeyword(string text, string key) {
+    if (key.length() > text.length()) return false;
+    for (int i = 0; i <= (int)(text.length() - key.length()); i++) {
+        bool match = true;
+        for (int j = 0; j < (int)key.length(); j++) {
+            if (text[i + j] != key[j]) { match = false; break; }
+        }
+        if (match) return true;
+    }
+    return false;
+}
+
 void setModuleCData(double* metrics, double* hist, int cnt) {
     if (metrics == 0) return;
     p_history = hist;
     h_count = cnt;
-
-    const int IDX_INITIAL_CAPITAL = 0;
-    const int IDX_FINAL_VALUE = 1;
-    const int IDX_TOTAL_RETURN_PCT = 2;
-    const int IDX_ANNUAL_RETURN_PCT = 3;
-    const int IDX_SHARPE = 4;
-    const int IDX_DRAWDOWN_PCT = 5;
-    const int IDX_TOTAL_TRADES = 6;
-    const int IDX_WIN_RATE_PCT = 7;
-    const int IDX_AVG_PROFIT = 8;
-    const int IDX_AVG_LOSS = 9;
-    const int IDX_PROFIT_FACTOR = 10;
-
-    capital = metrics[IDX_INITIAL_CAPITAL];
-    finalVal = metrics[IDX_FINAL_VALUE];
-    totalReturn = metrics[IDX_TOTAL_RETURN_PCT];
-    annualReturn = metrics[IDX_ANNUAL_RETURN_PCT];
-    sharpe = metrics[IDX_SHARPE];
-    drawdown = metrics[IDX_DRAWDOWN_PCT];
-    totalTrades = (int)metrics[IDX_TOTAL_TRADES];
-    winRate = metrics[IDX_WIN_RATE_PCT];
-    avgProfit = metrics[IDX_AVG_PROFIT];
-    avgLoss = metrics[IDX_AVG_LOSS];
-    profitFactor = metrics[IDX_PROFIT_FACTOR];
-
+    capital = metrics[0];
+    finalVal = metrics[1];
+    totalReturn = metrics[2];
+    annualReturn = metrics[3];
+    sharpe = metrics[4];
+    drawdown = metrics[5];
+    totalTrades = (int)metrics[6];
+    winRate = metrics[7];
+    avgProfit = metrics[8];
+    avgLoss = metrics[9];
+    profitFactor = metrics[10];
     wins = (int)((winRate / 100.0) * totalTrades + 0.5);
     losses = totalTrades - wins;
 }
@@ -56,145 +58,80 @@ void displaySummary() {
 }
 
 void showVisualChart() {
-    string* labels = new string[3]{"Returns ", "Win Rate", "Risk    "};
-    double* values = new double[3]{totalReturn, winRate, (100.0 - drawdown)};
-    
-    cout << "\n--- Performance Visualization Board ---" << endl;
+    string labels[3] = {"Returns ", "Win Rate", "Risk    "};
+    double values[3] = {totalReturn, winRate, (100.0 - drawdown)};
+    cout << "\n--- Performance Visualization Board ---\n";
     for (int i = 0; i < 3; i++) {
         cout << labels[i] << " |";
-        int barLength = (int)(values[i] / 2.0);
-        if (barLength > 50) barLength = 50; 
-        for (int j = 0; j < 50; j++) {
-            if (j < barLength) cout << "#"; else cout << " ";
-        }
-        cout << "| [" << values[i] << "%]" << endl;
+        int barLength = (int)(values[i] / 2.0); if (barLength > 50) barLength = 50; 
+        for (int j = 0; j < 50; j++) cout << (j < barLength ? "#" : " ");
+        cout << "| [" << values[i] << "%]\n";
     }
-    
-    delete[] labels;
-    delete[] values;
 }
 
-void drawEquityCurve(double* history, int count) {
-    cout << "\n--- Equity Curve (Growth Path) ---" << endl;
-    double minVal = history[0], maxVal = history[0];
-    for (int i = 0; i < count; i++) {
-        if (history[i] < minVal) minVal = history[i];
-        if (history[i] > maxVal) maxVal = history[i];
-    }
-    double range = maxVal - minVal;
-    if (range < 1) range = 1; 
+bool startChatbot(double** matrix, int& rows) {
+    cout << "\n      ___   __             ________          __  __          __  \n";
+    cout << "     /   | / /____ _____  / ____/ /_  ____ _/ /_/ /_  ____  / /_ \n";
+    cout << "    / /| |/ / __ `/ __ \\ / /   / __ \\/ __ `/ __/ __ \\/ __ \\/ __/ \n";
+    cout << "   / ___ / / /_/ / /_/ // /___/ / / / /_/ / /_/ /_/ / /_/ / /_   \n";
+    cout << "  /_/  |_\\_\\__, /\\____/ \\____/_/ /_/\\__,_/\\__/_.___/\\____/\\__/   \n";
 
-    int rows = 11;
-    int cols = 31;
-    char** equityGrid = new char*[rows];
-    for(int i = 0; i < rows; i++) {
-        equityGrid[i] = new char[cols];
-        for(int j = 0; j < cols; j++) equityGrid[i][j] = ' ';
-    }
+    string userCmd; bool isActive = true;
+    int numCats = 4;
+    string* catNames = new string[numCats]{"Returns", "Risk Metrics", "Trade Stats", "Settings & Data"};
+    int* catCounts = new int[numCats]{2, 2, 5, 4};
+    string** helpMap = new string*[numCats];
+    helpMap[0] = new string[2]{"totalreturn - Show total return", "profit      - Show annual profit"};
+    helpMap[1] = new string[2]{"sharpe      - Show Sharpe ratio", "drawdown    - Show max drawdown"};
+    helpMap[2] = new string[5]{"losing      - Show losing trades", "winning     - Show winning trades", "tradecount  - Show trade count", "winrate     - Show win rate %", "advice      - Get strategy advice"};
+    helpMap[3] = new string[4]{"edit        - Edit market data", "settings    - Change strategy params", "retest      - Update results", "exit        - Close the chat"};
 
-    for (int col = 0; col < cols; col++) {
-        int index = (col * (count - 1)) / (cols - 1);
-        double val = history[index];
-        int valueRow = (int)(((val - minVal) / range) * 10);
-        if(valueRow >= 0 && valueRow < rows) equityGrid[valueRow][col] = '*';
-    }
-
-    for (int row = rows - 1; row >= 0; row--) {
-        double priceRow = minVal + (range * (row / 10.0));
-        cout << "$" << (int)priceRow << "\t|";
-        for (int col = 0; col < cols; col++) cout << equityGrid[row][col];
+    cout << "\n+---------------------------------------------------------+" << endl;
+    cout << "|              DYNAMIC COMMAND HELP MENU                  |" << endl;
+    for (int i = 0; i < numCats; i++) {
+        cout << " [" << catNames[i] << "]" << endl;
+        for (int j = 0; j < catCounts[i]; j++) cout << "  * " << helpMap[i][j] << endl;
         cout << endl;
     }
-    
-    for(int i = 0; i < rows; i++) delete[] equityGrid[i];
-    delete[] equityGrid;
+    cout << "+---------------------------------------------------------+" << endl;
 
-    cout << "\t+-------------------------------" << endl;
-    cout << "\t  Start Period          End Period" << endl;
-}
-
-void startChatbot() {
-    string userCmd;
-    bool isActive = true;
-
-    int historyCapacity = 5;
-    int historyCount = 0;
-    string* cmdHistory = new string[historyCapacity];
-
-    cout << endl;
-    cout << "      ___   __             ________          __  __          __  " << endl;
-    cout << "     /   | / /____ _____  / ____/ /_  ____ _/ /_/ /_  ____  / /_ " << endl;
-    cout << "    / /| |/ / __ `/ __ \\ / /   / __ \\/ __ `/ __/ __ \\/ __ \\/ __/ " << endl;
-    cout << "   / ___ / / /_/ / /_/ // /___/ / / / /_/ / /_/ /_/ / /_/ / /_   " << endl;
-    cout << "  /_/  |_\\_\\__, /\\____/ \\____/_/ /_/\\__,_/\\__/_.___/\\____/\\__/   " << endl;
-    cout << "          /____/                                                 " << endl;
-    cout << endl; 
-    cout << "  +---------------------------------------------------------+" << endl;
-    cout << "  |      ONLY TYPE THE AVAILABLE COMMANDS                   |" << endl;
-    cout << "  +---------------------------------------------------------+" << endl;
-    cout << "  |  Hello/Hi     - I am AlgoB, your backtesting assistant. |" << endl;
-    cout << "  |  totalreturn  - Show total & annual return              |" << endl;
-    cout << "  |  profit       - Show total & annual return              |" << endl;
-    cout << "  |  sharpe       - Show Sharpe ratio                       |" << endl;
-    cout << "  |  drawdown     - Show max drawdown                       |" << endl;
-    cout << "  |  losing       - Show losing trade stats                 |" << endl;
-    cout << "  |  winning      - Show winning trade stats                |" << endl;
-    cout << "  |  tradecount   - Show number of trades                   |" << endl;
-    cout << "  |  winrate      - Show win rate percentage                |" << endl;
-    cout << "  |  compare      - Show visual bar chart                   |" << endl;
-    cout << "  |  equity       - Show equity curve graph                 |" << endl;
-    cout << "  |  history      - Show dynamically logged command history   |" << endl;
-    cout << "  |  help         - Show this help menu                     |" << endl;
-    cout << "  |  exit         - Exit the chat                           |" << endl;
-    cout << "  +---------------------------------------------------------+" << endl;
-    cout << endl;
-    cout << "\nYou: ";
-    
-    while (isActive && cin >> userCmd) {
-        
-        if (historyCount == historyCapacity) {
-            int newCapacity = historyCapacity * 2; 
-            string* newHistory = new string[newCapacity]; 
-            
-            for (int i = 0; i < historyCount; i++) {
-                newHistory[i] = cmdHistory[i];
-            }
-            
-            delete[] cmdHistory;  
-            cmdHistory = newHistory; 
-            historyCapacity = newCapacity;
+    cout << "\n > You: ";
+    if (cin.peek() == '\n') cin.ignore();
+    while (isActive && getline(cin, userCmd)) {
+        for(int i=0; i<(int)userCmd.length(); i++) if(userCmd[i]>='A' && userCmd[i]<='Z') userCmd[i]+=32;
+        if (findKeyword(userCmd, "exit") || findKeyword(userCmd, "quit")) isActive = false;
+        else if (findKeyword(userCmd, "hello") || findKeyword(userCmd, "hi")) cout << "Hello! I am your AlgoB assistant. How can I help with your strategy today?" << endl;
+        else if (findKeyword(userCmd, "return") || findKeyword(userCmd, "profit")) cout << "Analysis: Total Return is " << totalReturn << "% and Annual Profit is $" << (int)((totalReturn/100)*capital) << "." << endl;
+        else if (findKeyword(userCmd, "sharpe")) cout << "Risk-Adjusted: Your Sharpe Ratio is " << sharpe << "." << endl;
+        else if (findKeyword(userCmd, "drawdown") || findKeyword(userCmd, "risk")) cout << "Risk: Max Drawdown reached " << drawdown << "% during the test." << endl;
+        else if (findKeyword(userCmd, "win")) cout << "Accuracy: Your Win Rate is " << winRate << "% (" << wins << " wins vs " << losses << " losses)." << endl;
+        else if (findKeyword(userCmd, "trade")) cout << "Volume: A total of " << totalTrades << " trades were executed." << endl;
+        else if (findKeyword(userCmd, "advice") || findKeyword(userCmd, "suggest")) {
+            cout << "\n[AlgoB Advice Engine]" << endl;
+            if (totalReturn < 0) cout << " > Warning: Strategy is losing money. Try increasing SMA Long Period." << endl;
+            if (drawdown > 15) cout << " > Warning: High Drawdown (" << drawdown << "%). Strategy is too aggressive." << endl;
+            if (winRate < 45) cout << " > Tip: Low Win Rate. Try increasing RSI Period." << endl;
+            if (profitFactor > 1.3 && totalReturn > 5) cout << " > Success: Solid metrics. This strategy shows good alpha!" << endl;
+            if (totalTrades < 5) cout << " > Note: Low sample size. Add more days of data." << endl;
         }
-
-        cmdHistory[historyCount] = userCmd;
-        historyCount++;
-
-        for (int i = 0; i < (int)userCmd.length(); i++) {
-            if (userCmd[i] >= 'A' && userCmd[i] <= 'Z') userCmd[i] += 32;
+        else if (findKeyword(userCmd, "edit") || findKeyword(userCmd, "change data")) {
+            editMarketData(matrix, rows); displayMarketTable(matrix, rows);
+            cout << "\n[System] Type 'retest' to apply these changes." << endl;
         }
-
-        if (userCmd == "exit") isActive = false;
-        else if (userCmd == "hello" || userCmd == "hi") cout << "Hello! I am AlgoB, your backtesting assistant." << endl;
-        else if (userCmd == "totalreturn" || userCmd == "profit") cout << "Stats: Total Return is " << totalReturn << "% and Annual is " << annualReturn << "%." << endl;
-        else if (userCmd == "sharpe") cout << "Sharpe Ratio: " << sharpe << endl;
-        else if (userCmd == "drawdown") cout << "Max Drawdown: " << drawdown << "%" << endl;
-        else if (userCmd == "losing") cout << "Losing Trades: " << losses << " (Avg Loss: $" << avgLoss << ")" << endl;
-        else if (userCmd == "winning") cout << "Winning Trades: " << wins << " (Avg Profit: $" << avgProfit << ")" << endl;
-        else if (userCmd == "tradecount") cout << "Total Trades: " << totalTrades << endl;
-        else if (userCmd == "winrate") cout << "Win Rate: " << winRate << "%" << endl;
-        else if (userCmd == "equity") drawEquityCurve(p_history, h_count);
-        else if (userCmd == "compare") showVisualChart();
-        else if (userCmd == "history") {
-            cout << "\n--- Session Command Logs (Capacity: " << historyCapacity << ") ---" << endl;
-            for (int i = 0; i < historyCount; i++) {
-                cout << "  " << i + 1 << ": " << cmdHistory[i] << endl;
-            }
-            cout << "------------------------------------------" << endl;
+        else if (findKeyword(userCmd, "settings") || findKeyword(userCmd, "param")) {
+            configureStrategy();
+            cout << "\n[System] Settings updated. Type 'retest' to see impact." << endl;
         }
-        else if (userCmd == "help") cout << "Available: totalreturn, profit, sharpe, drawdown, losing, winning, tradecount, winrate, compare, equity, history, help, exit" << endl;
-        else cout << "Type 'help' for the list of commands." << endl;
-        
-        if (isActive) cout << "\nYou: ";
+        else if (findKeyword(userCmd, "retest") || findKeyword(userCmd, "update") || findKeyword(userCmd, "run")) {
+            for (int i = 0; i < numCats; i++) delete[] helpMap[i];
+            delete[] helpMap; delete[] catNames; delete[] catCounts;
+            return true;
+        }
+        else if (findKeyword(userCmd, "compare") || findKeyword(userCmd, "chart")) showVisualChart();
+        else cout << "I didn't quite get that. Try asking about 'return', 'win rate', 'risk', or 'advice'." << endl;
+        if (isActive) cout << "\n > You: ";
     }
-
-    delete[] cmdHistory;
+    for (int i = 0; i < numCats; i++) delete[] helpMap[i];
+    delete[] helpMap; delete[] catNames; delete[] catCounts;
+    return false;
 }

@@ -32,7 +32,7 @@ void runBacktest(const double* prices, const int* signals, int daysCount, double
             price = prices[day];      
             int signal = signals[day];  
             
-                if(signal == 1 && shares == 0)  
+                if(signal == 1 && shares == 0 && price > 0)  
                     {
                         shares = cash / price; 
                         cash = cash - shares * price; 

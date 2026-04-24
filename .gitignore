@@ -1,0 +1,9 @@
+*.csv
+*.exe
+*.o
+*.obj
+bin/
+obj/
+.vs/
+out/
+build/
