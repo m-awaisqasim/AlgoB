@@ -1,7 +1,6 @@
 #include <iostream>
 #include <string>
 #include <cmath>
-
 using namespace std;
 
 const int METRICS_COUNT = 11;
@@ -14,18 +13,27 @@ int totalTrades, wins, losses;
 double* p_history = 0;
 int h_count = 0;
 double* price_data;
-int sma_short = 5, sma_long = 20, rsi_period = 14;
+int sma_short = 20, sma_long = 50, rsi_period = 14;
 bool startChatbot(double** matrix, int& rows);
 
 // ============================================================================
 // MODULE A: DATA MANAGEMENT
 // ============================================================================
 
-double** loadMarketData(string filename, int &rows, int &cols) {
-    cout << "\n[Module A] How many days of market data? ";
-    cin >> rows;
-    cols = 5;
+int getLength(string s) {
+    int count = 0;
+    while (s[count] != '\0') count++;
+    return count;
+}
 
+double** loadMarketData(string filename, int &rows, int &cols) {
+    do {
+        cout << "\n[Module A] How many days of market data? (Minimum 2): ";
+        cin >> rows;
+        if (rows < 2) cout << " >> Error: You need at least 2 days of data for analysis." << endl;
+    } while (rows < 2);
+
+    cols = 5;
     double** priceMatrix = new double*[rows];
     for (int i = 0; i < rows; i++) {
         priceMatrix[i] = new double[cols];
@@ -37,10 +45,9 @@ double** loadMarketData(string filename, int &rows, int &cols) {
         string line;
         cout << "Enter Day " << i + 1 << ": ";
         getline(cin, line);
-        
         int col = 0, start = 0;
-        for (int k = 0; k <= (int)line.length() && col < 5; k++) {
-            if (k == (int)line.length() || line[k] == ',' || line[k] == ' ') {
+        for (int k = 0; k <= getLength(line) && col < 5; k++) {
+            if (k == getLength(line) || line[k] == ',' || line[k] == ' ') {
                 if (k > start) {
                     string part = "";
                     for (int m = start; m < k; m++) part += line[m];
@@ -149,14 +156,27 @@ int* generateSignals(double* prices, int daysCount) {
     return final_signals;
 }
 
-void configureStrategy() {
+void configureStrategy(int totalDays) {
     char choice;
-    cout << "\n[Module B] Use default strategy parameters? (SMA: 5/20, RSI: 14) (y/n): ";
+    cout << "\n[Module B] Use default strategy parameters? (SMA: 20/50, RSI: 14) (y/n): ";
     cin >> choice;
     if (choice == 'n' || choice == 'N') {
-        cout << "Enter SMA Short Period: "; cin >> sma_short;
-        cout << "Enter SMA Long Period: ";  cin >> sma_long;
-        cout << "Enter RSI Period: ";      cin >> rsi_period;
+        bool valid = false;
+        while (!valid) {
+            cout << "Enter SMA Short Period: "; cin >> sma_short;
+            cout << "Enter SMA Long Period: ";  cin >> sma_long;
+            cout << "Enter RSI Period: ";      cin >> rsi_period;
+
+            if (sma_short <= 0 || sma_long <= 0 || rsi_period <= 0) {
+                cout << " >> Error: All periods must be positive numbers." << endl;
+            } else if (sma_short >= sma_long) {
+                cout << " >> Error: SMA Short must be less than SMA Long." << endl;
+            } else if (sma_long >= totalDays || rsi_period >= totalDays) {
+                cout << " >> Error: Periods cannot be longer than the data days (" << totalDays << ")." << endl;
+            } else {
+                valid = true;
+            }
+        }
     }
 }
 
@@ -214,12 +234,18 @@ void setModuleCData(double* metrics, double* hist, int cnt) {
     wins = (int)((winRate / 100.0) * totalTrades + 0.5); losses = totalTrades - wins;
 }
 
+string formatPKR(double val) {
+    if (val >= 1000000) return to_string((int)(val / 1000000)) + "M";
+    if (val >= 1000) return to_string((int)(val / 1000)) + "K";
+    return to_string((int)val);
+}
+
 void displaySummary() {
     cout << "========================================" << endl;
     cout << "     BACKTESTING PERFORMANCE RESULTS    " << endl;
     cout << "========================================" << endl;
-    cout << "Initial Capital  : $" << capital << endl;
-    cout << "Final Portfolio  : $" << finalVal << endl;
+    cout << "Initial Capital  : Rs." << formatPKR(capital) << endl;
+    cout << "Final Portfolio  : Rs." << formatPKR(finalVal) << endl;
     cout << "Total Return     : " << totalReturn << "%" << endl;
     cout << "Sharpe Ratio     : " << sharpe << endl;
     cout << "Drawdown         : " << drawdown << "%" << endl;
@@ -245,10 +271,10 @@ void showVisualChart() {
 }
 
 bool findKeyword(string text, string key) {
-    if (key.length() > text.length()) return false;
-    for (int i = 0; i <= (int)(text.length() - key.length()); i++) {
+    if (getLength(key) > getLength(text)) return false;
+    for (int i = 0; i <= (getLength(text) - getLength(key)); i++) {
         bool match = true;
-        for (int j = 0; j < (int)key.length(); j++) {
+        for (int j = 0; j < getLength(key); j++) {
             if (text[i + j] != key[j]) { match = false; break; }
         }
         if (match) return true;
@@ -291,11 +317,14 @@ bool startChatbot(double** matrix, int& rows) {
     cout << "\n > You: ";
     if (cin.peek() == '\n') cin.ignore();
     while (isActive && getline(cin, userCmd)) {
-        for(int i=0; i<(int)userCmd.length(); i++) if(userCmd[i]>='A' && userCmd[i]<='Z') userCmd[i]+=32;
+        for(int i=0; i<getLength(userCmd); i++) {
+            if(userCmd[i]>='A' && userCmd[i]<='Z') userCmd[i]+=32;
+        }
         
         if (findKeyword(userCmd, "exit") || findKeyword(userCmd, "quit") || findKeyword(userCmd, "bye")) isActive = false;
         else if (findKeyword(userCmd, "hello") || findKeyword(userCmd, "hi")) cout << "Hello! I am your AlgoB assistant. How can I help with your strategy today?" << endl;
-        else if (findKeyword(userCmd, "return") || findKeyword(userCmd, "profit")) cout << "Analysis: Total Return is " << totalReturn << "% and Annual Profit is $" << (int)((totalReturn/100)*capital) << "." << endl;
+        else if (findKeyword(userCmd, "return") || findKeyword(userCmd, "profit")) 
+            cout << "Analysis: Total Return is " << totalReturn << "% and Annual Profit is Rs." << formatPKR((totalReturn/100)*capital) << "." << endl;
         else if (findKeyword(userCmd, "sharpe")) cout << "Risk-Adjusted: Your Sharpe Ratio is " << sharpe << "." << endl;
         else if (findKeyword(userCmd, "drawdown") || findKeyword(userCmd, "risk")) cout << "Risk: Max Drawdown reached " << drawdown << "% during the test." << endl;
         else if (findKeyword(userCmd, "win")) cout << "Accuracy: Your Win Rate is " << winRate << "% (" << wins << " wins vs " << losses << " losses)." << endl;
@@ -308,13 +337,13 @@ bool startChatbot(double** matrix, int& rows) {
             if (profitFactor > 1.3 && totalReturn > 5) cout << " > Success: Solid metrics. This strategy shows good alpha!" << endl;
             if (totalTrades < 5) cout << " > Note: Low sample size. Add more days of data." << endl;
         }
-        else if (findKeyword(userCmd, "edit") || findKeyword(userCmd, "change data")) {
+        else if (findKeyword(userCmd, "edit") || findKeyword(userCmd, "change")) {
             editMarketData(matrix, rows);
             displayMarketTable(matrix, rows);
             cout << "\n[System] Type 'retest' to apply these changes." << endl;
         }
-        else if (findKeyword(userCmd, "settings") || findKeyword(userCmd, "param")) {
-            configureStrategy();
+        else if (findKeyword(userCmd, "settings")) {
+            configureStrategy(rows);
             cout << "\n[System] Settings updated. Type 'retest' to see impact." << endl;
         }
         else if (findKeyword(userCmd, "retest") || findKeyword(userCmd, "update") || findKeyword(userCmd, "run")) {
@@ -348,12 +377,15 @@ int main() {
     cout << endl;
     
     double initialCapital;
-    cout << "[System] Enter Initial Investment ($): ";
-    cin >> initialCapital;
+    do {
+        cout << "[System] Enter Initial Investment (PKR): ";
+        cin >> initialCapital;
+        if (initialCapital < 1000) cout << " >> Error: You need at least 1000 PKR to trade." << endl;
+    } while (initialCapital < 1000);
 
     int rows = 0, cols = 0;
     double** marketData = loadMarketData("", rows, cols);
-    configureStrategy();
+    configureStrategy(rows);
 
     displayMarketTable(marketData, rows);
 
