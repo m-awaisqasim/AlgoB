@@ -6,31 +6,29 @@ const int MAX_DAYS = 1000;
 double price_data[MAX_DAYS];
 int sma_short = 20, sma_long = 50, rsi_period = 14;
 
-double SMA(int day, int period) {
-    double total = 0;
-    for (int i = day - period + 1; i <= day; i++) {
-        total += price_data[i];
+double calculateSMA(double prices[], int currentIndex, int period) {
+    double sum = 0;
+    for (int i = currentIndex - period + 1; i <= currentIndex; i++) {
+        sum = sum + prices[i];
     }
-    return total / period;
+    return sum / period;
 }
 
-double RSI(int day, int period) {
-    double gain = 0, loss = 0;
-    for (int i = day - period + 1; i <= day; i++) {
-        double change = price_data[i] - price_data[i - 1];
+double calculateRSI(double prices[], int currentIndex, int period) {
+    double gain = 0;
+    double loss = 0;
+    for (int i = currentIndex - period + 1; i <= currentIndex; i++) {
+        double change = prices[i] - prices[i - 1];
         if (change > 0) {
-            gain += change;
-        }
-        else {
-            loss += (-change);
+            gain = gain + change;
+        } else {
+            loss = loss - change;
         }
     }
-    double avg_gain = gain / period;
-    double avg_loss = loss / period;
-    if (avg_loss == 0) {
+    if (loss == 0) {
         return 100;
     }
-    double rs = avg_gain / avg_loss;
+    double rs = gain / loss;
     return 100 - (100 / (1 + rs));
 }
 
@@ -44,8 +42,9 @@ void generateSignalsManual(double prices[MAX_DAYS], int daysCount, int signals[M
 
     for (int day = start_day; day < daysCount; day++) {
         int sma_sig = 0, rsi_sig = 0;
-        double s_val = SMA(day, sma_short);
-        double l_val = SMA(day, sma_long);
+        double s_val = calculateSMA(price_data, day, sma_short);
+        double l_val = calculateSMA(price_data, day, sma_long);
+        
         if (s_val > l_val) {
             sma_sig = 1;
         }
@@ -53,7 +52,7 @@ void generateSignalsManual(double prices[MAX_DAYS], int daysCount, int signals[M
             sma_sig = -1;
         }
 
-        double rsi_val = RSI(day, rsi_period);
+        double rsi_val = calculateRSI(price_data, day, rsi_period);
         if (rsi_val < 30) {
             rsi_sig = 1;
         }

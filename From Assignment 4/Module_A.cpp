@@ -76,7 +76,7 @@ void displayMarketTable(double matrix[MAX_DAYS][5], int rows) {
         else if (i + 1 < 100) cout << " |";
         else cout << "|";
         for (int j = 0; j < 5; j++) {
-            cout << matrix[i][j] << "\t";
+            cout << matrix[i][j] << "\t\t";
         }
         cout << endl;
     }
