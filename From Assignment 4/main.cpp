@@ -14,7 +14,7 @@ int totalTrades, wins, losses;
 double p_history[MAX_DAYS];
 int h_count = 0;
 double price_data[MAX_DAYS];
-int sma_short = 20, sma_long = 50, rsi_period = 14;
+int sma_short = 6, sma_long = 15, rsi_period = 5;
 
 // ============================================================================
 // MODULE A: DATA MANAGEMENT
@@ -85,14 +85,20 @@ void displayMarketTable(double matrix[MAX_DAYS][5], int rows) {
     cout << "+-----+---------------+---------------+---------------+---------------+---------------+" << endl;
     cout << "| Day |     Open      |     High      |      Low      |     Close     |    Volume     |" << endl;
     cout << "+-----+---------------+---------------+---------------+---------------+---------------+" << endl;
-    int previewRows = (rows > 5) ? 5 : rows;
+    int previewRows;
+    if (rows > 5) {
+        previewRows = 5;
+    }
+    else {
+        previewRows = rows;
+    }
     for (int i = 0; i < previewRows; i++) {
         cout << "|  " << i + 1;
         if (i + 1 < 10) cout << "  |";
         else if (i + 1 < 100) cout << " |";
         else cout << "|";
         for (int j = 0; j < 5; j++) {
-            cout << matrix[i][j] << "\t\t";
+            cout << "\t" << matrix[i][j] << "\t";
         }
         cout << endl;
     }
@@ -115,7 +121,8 @@ double calculateSMA(double prices[], int currentIndex, int period) {
 double calculateRSI(double prices[], int currentIndex, int period) {
     double gain = 0;
     double loss = 0;
-    for (int i = currentIndex - period + 1; i <= currentIndex; i++) {
+    int startIndex = currentIndex - period + 1;
+    for (int i = startIndex; i <= currentIndex; i++) {
         double change = prices[i] - prices[i - 1];
         if (change > 0) {
             gain = gain + change;
@@ -149,14 +156,16 @@ void generateSignalsManual(double prices[MAX_DAYS], int daysCount, int signals[M
         if (rsi_val < 30) rsi_sig = 1;
         else if (rsi_val > 70) rsi_sig = -1;
 
-        if ((sma_sig == 1 || rsi_sig == 1) && !(sma_sig == -1 || rsi_sig == -1)) signals[day] = 1;
-        else if ((sma_sig == -1 || rsi_sig == -1) && !(sma_sig == 1 || rsi_sig == 1)) signals[day] = -1;
+        if (sma_sig == 1 && rsi_sig >= 0) signals[day] = 1;
+        else if (rsi_sig == 1 && sma_sig >= 0) signals[day] = 1;
+        else if (sma_sig == -1 && rsi_sig <= 0) signals[day] = -1;
+        else if (rsi_sig == -1 && sma_sig <= 0) signals[day] = -1;
     }
 }
 
 void configureStrategy(int totalDays) {
     char choice;
-    cout << "\n[Module B] Use default strategy parameters? (SMA: 20/50, RSI: 14) (y/n): ";
+    cout << "\n[Module B] Use default strategy parameters? (SMA: 6/15, RSI: 5) (y/n): ";
     cin >> choice;
     if (choice == 'n' || choice == 'N') {
         bool valid = false;
@@ -352,7 +361,8 @@ bool startChatbot(double matrix[MAX_DAYS][5], int& rows) {
             if (drawdown > 15) cout << " > Warning: High Drawdown (" << drawdown << "%). Strategy is too aggressive." << endl;
             if (winRate < 45) cout << " > Tip: Low Win Rate. Try increasing RSI Period." << endl;
             if (profitFactor > 1.3 && totalReturn > 5) cout << " > Success: Solid metrics. This strategy shows good alpha!" << endl;
-            if (totalTrades < 5) cout << " > Note: Low sample size. Add more days of data." << endl;
+            if (totalTrades < 3) cout << " > Note: Low trade count. Strategy hasn't traded enough for a solid statistical conclusion." << endl;
+            else if (totalTrades < 10) cout << " > Note: Small sample size. These results may not be consistent over long periods." << endl;
         }
         else if (findKeyword(userCmd, "edit")) {
             editMarketData(matrix, rows);

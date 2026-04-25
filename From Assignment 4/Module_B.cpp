@@ -4,7 +4,7 @@ using namespace std;
 const int MAX_DAYS = 1000;
 
 double price_data[MAX_DAYS];
-int sma_short = 20, sma_long = 50, rsi_period = 14;
+int sma_short = 6, sma_long = 15, rsi_period = 5;
 
 double calculateSMA(double prices[], int currentIndex, int period) {
     double sum = 0;
@@ -17,7 +17,8 @@ double calculateSMA(double prices[], int currentIndex, int period) {
 double calculateRSI(double prices[], int currentIndex, int period) {
     double gain = 0;
     double loss = 0;
-    for (int i = currentIndex - period + 1; i <= currentIndex; i++) {
+    int startIndex = currentIndex - period + 1;
+    for (int i = startIndex; i <= currentIndex; i++) {
         double change = prices[i] - prices[i - 1];
         if (change > 0) {
             gain = gain + change;
@@ -60,18 +61,24 @@ void generateSignalsManual(double prices[MAX_DAYS], int daysCount, int signals[M
             rsi_sig = -1;
         }
 
-        if ((sma_sig == 1 || rsi_sig == 1) && !(sma_sig == -1 || rsi_sig == -1)) {
-            signals[day] = 1;
+        if (sma_sig == 1 && rsi_sig >= 0) {
+            signals[day] = 1;       
         }
-        else if ((sma_sig == -1 || rsi_sig == -1) && !(sma_sig == 1 || rsi_sig == 1)) {
-            signals[day] = -1;
+        else if (rsi_sig == 1 && sma_sig >= 0) {
+            signals[day] = 1;       
+        }
+        else if (sma_sig == -1 && rsi_sig <= 0) {
+            signals[day] = -1;      
+        }
+        else if (rsi_sig == -1 && sma_sig <= 0) {
+            signals[day] = -1;      
         }
     }
 }
 
 void configureStrategy(int totalDays) {
     char choice;
-    cout << "\n[Module B] Use default strategy parameters? (SMA: 20/50, RSI: 14) (y/n): ";
+    cout << "\n[Module B] Use default strategy parameters? (SMA: 6/15, RSI: 5) (y/n): ";
     cin >> choice;
     if (choice == 'n' || choice == 'N') {
         bool valid = false;

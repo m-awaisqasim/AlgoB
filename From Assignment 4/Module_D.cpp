@@ -165,7 +165,8 @@ bool startChatbot(double matrix[MAX_DAYS][5], int& rows) {
             if (drawdown > 15) cout << " > Warning: High Drawdown (" << drawdown << "%). Strategy is too aggressive." << endl;
             if (winRate < 45) cout << " > Tip: Low Win Rate. Try increasing RSI Period." << endl;
             if (profitFactor > 1.3 && totalReturn > 5) cout << " > Success: Solid metrics. This strategy shows good alpha!" << endl;
-            if (totalTrades < 5) cout << " > Note: Low sample size. Add more days of data." << endl;
+            if (totalTrades < 3) cout << " > Note: Low trade count. Strategy hasn't traded enough for a solid statistical conclusion." << endl;
+            else if (totalTrades < 10) cout << " > Note: Small sample size. These results may not be consistent over long periods." << endl;
         }
         else if (findKeyword(userCmd, "edit")) {
             editMarketData(matrix, rows);
