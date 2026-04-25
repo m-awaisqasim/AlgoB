@@ -57,33 +57,51 @@ void setModuleCData(double* metrics, double* hist, int cnt) {
 }
 
 void displaySummary() {
-    cout << "========================================" << endl;
-    cout << "     BACKTESTING PERFORMANCE RESULTS    " << endl;
-    cout << "========================================" << endl;
-    cout << "Initial Capital  : Rs." << formatPKR(capital) << endl;
-    cout << "Final Portfolio  : Rs." << formatPKR(finalVal) << endl;
-    cout << "Total Return     : " << totalReturn << "%" << endl;
-    cout << "Sharpe Ratio     : " << sharpe << endl;
-    cout << "Drawdown         : " << drawdown << "%" << endl;
-    cout << "Total Trades     : " << totalTrades << endl;
-    cout << "Win Rate         : " << winRate << "%" << endl;
-    cout << "Profit Factor    : " << profitFactor << endl;
-    cout << "----------------------------------------" << endl;
+    string status = (totalReturn >= 0) ? "PROFITABLE" : "LOSS MAKING";
+
+    cout << "\n  +------------------------------------------------------+" << endl;
+    cout << "  |         STRATEGY PERFORMANCE SUMMARY                   |" << endl;
+    cout << "  +--------------------------------------------------------+" << endl;
+    cout << "  |                                                        " << endl;
+    cout << "  |  STATUS: " << status << "                              " << endl;
+    cout << "  |                                                        " << endl;
+    cout << "  |  [ OVERVIEW ]                                          " << endl;
+    cout << "  |  Initial Capital : Rs." << formatPKR(capital) << "     " << endl; 
+    cout << "  |  Final Value     : Rs." << formatPKR(finalVal) << "    " << endl;
+    cout << "  |  Total Return    : " << totalReturn << "%              " << endl;
+    cout << "  |                                                        " << endl;
+    cout << "  |  [ RISK METRICS ]                                      " << endl;
+    cout << "  |  Max Drawdown    : " << drawdown << "%                 " << endl;
+    cout << "  |  Sharpe Ratio    : " << sharpe << "                    " << endl;
+    cout << "  |  Profit Factor   : " << profitFactor << "              " << endl;
+    cout << "  |                                                        " << endl;
+    cout << "  |  [ TRADE STATS ]                                       " << endl;
+    cout << "  |  Total Trades    : " << totalTrades << "               " << endl;
+    cout << "  |  Win Rate        : " << winRate << "%                  " << endl;
+    cout << "  |  Wins / Losses   : " << wins << " / " << losses << "   " << endl;
+    cout << "  +--------------------------------------------------------+" << endl;
 }
 
 void showVisualChart() {
-    string labels[3] = {"Returns ", "Win Rate", "Risk    "};
+    string labels[3] = {"Returns ", "Win Rate", "Safety  "};
     double values[3] = {totalReturn, winRate, (100.0 - drawdown)};
-    cout << "\n--- Performance Visualization Board ---\n";
+    string bars[3] = {">>>>", "####", "===="};
+    cout << endl;
+    cout << "  +----------------------------------------------------+" << endl;
+    cout << "  |         PERFORMANCE VISUALIZATION BOARD            |" << endl;
+    cout << "  +----------------------------------------------------+" << endl;
     for (int i = 0; i < 3; i++) {
-        cout << labels[i] << " |";
+        cout << "  | " << labels[i] << " |";
         int barLength = (int)(values[i] / 2.0);
-        if (barLength > 50) barLength = 50;
-        for (int j = 0; j < 50; j++) {
-            cout << (j < barLength ? "#" : " ");
+        if (barLength < 0) barLength = 0;
+        if (barLength > 40) barLength = 40;
+        for (int j = 0; j < 40; j++) {
+            if (j < barLength) cout << bars[i][j % 4];
+            else cout << " ";
         }
-        cout << "| [" << values[i] << "%]\n";
+        cout << "| " << values[i] << "%" << endl;
     }
+    cout << "  +----------------------------------------------------+" << endl;
 }
 
 bool startChatbot(double matrix[MAX_DAYS][5], int& rows) {
@@ -96,27 +114,32 @@ bool startChatbot(double matrix[MAX_DAYS][5], int& rows) {
     string userCmd;
     bool isActive = true;
 
-    const int NUM_CATS = 4;
-    string catNames[NUM_CATS] = {"Returns", "Risk Metrics", "Trade Stats", "Settings & Data"};
-    int catCounts[NUM_CATS] = {2, 2, 5, 4};
-    string helpItems[NUM_CATS][5] = {
-        {"totalreturn", "profit", "", "", ""},
-        {"sharpe", "drawdown", "", "", ""},
-        {"losing", "winning", "tradecount", "winrate", "advice"},
-        {"edit", "settings", "retest", "exit", ""}
-    };
-
-    cout << "\n+---------------------------------------------------------+" << endl;
-    cout << "|              DYNAMIC COMMAND HELP MENU                  |" << endl;
-    cout << "+---------------------------------------------------------+" << endl;
-    for (int i = 0; i < NUM_CATS; i++) {
-        cout << " [" << *(catNames + i) << "]" << endl;
-        for (int j = 0; j < *(catCounts + i); j++) {
-            cout << "  * " << *(*(helpItems + i) + j) << endl;
-        }
-        cout << endl;
-    }
-    cout << "+---------------------------------------------------------+" << endl;
+    cout << endl;
+    cout << "  +---------------------------------------------------------+" << endl;
+    cout << "  |            ALGOCHATBOT - COMMAND REFERENCE              |" << endl;
+    cout << "  +---------------------------------------------------------+" << endl;
+    cout << "  |  [Returns]" << endl;
+    cout << "  |    >> return    - Show total return & profit" << endl;
+    cout << "  |    >> profit    - Show annual profit" << endl;
+    cout << "  |" << endl;
+    cout << "  |  [Risk Metrics]" << endl;
+    cout << "  |    >> sharpe    - Show Sharpe ratio" << endl;
+    cout << "  |    >> drawdown  - Show max drawdown" << endl;
+    cout << "  |" << endl;
+    cout << "  |  [Trade Stats]" << endl;
+    cout << "  |    >> winrate   - Show win rate %" << endl;
+    cout << "  |    >> tradecount- Show trade count" << endl;
+    cout << "  |    >> advice    - Get strategy tips" << endl;
+    cout << "  |    >> chart     - Visual comparison" << endl;
+    cout << "  |    >> compare   - Performance bars" << endl;
+    cout << "  |" << endl;
+    cout << "  |  [Settings & Data]" << endl;
+    cout << "  |    >> edit      - Edit market data" << endl;
+    cout << "  |    >> settings  - Change SMA/RSI" << endl;
+    cout << "  |    >> retest    - Re-run backtest" << endl;
+    cout << "  |    >> exit      - Close chatbot" << endl;
+    cout << "  |" << endl;
+    cout << "  +---------------------------------------------------------+" << endl;
 
     cout << "\n > You: ";
     while (isActive && getline(cin, userCmd)) {

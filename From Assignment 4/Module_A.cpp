@@ -65,13 +65,21 @@ void editMarketData(double matrix[MAX_DAYS][5], int rows) {
 }
 
 void displayMarketTable(double matrix[MAX_DAYS][5], int rows) {
-    cout << "\nDay\tOpen\tHigh\tLow\tClose\tVolume" << endl;
+    cout << endl;
+    cout << "+-----+---------------+---------------+---------------+---------------+---------------+" << endl;
+    cout << "| Day |     Open      |     High      |      Low      |     Close     |    Volume     |" << endl;
+    cout << "+-----+---------------+---------------+---------------+---------------+---------------+" << endl;
     int previewRows = (rows > 5) ? 5 : rows;
     for (int i = 0; i < previewRows; i++) {
-        cout << i + 1 << "\t";
+        cout << "|  " << i + 1;
+        if (i + 1 < 10) cout << "  |";
+        else if (i + 1 < 100) cout << " |";
+        else cout << "|";
         for (int j = 0; j < 5; j++) {
             cout << matrix[i][j] << "\t";
         }
         cout << endl;
     }
+    cout << "+-----+---------------+---------------+---------------+---------------+---------------+" << endl;
+    if (rows > 5) cout << "  ... (" << rows - 5 << " more rows not shown)" << endl;
 }
