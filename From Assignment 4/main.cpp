@@ -4,17 +4,18 @@
 using namespace std;
 
 const int METRICS_COUNT = 11;
+const int MAX_DAYS = 1000;
 
 // ============================================================================
-// GLOBAL STATE (MODULE D)
+// GLOBAL Varaibles
 // ============================================================================
 double capital, finalVal, totalReturn, annualReturn, sharpe, drawdown, winRate, avgProfit, avgLoss, profitFactor;
 int totalTrades, wins, losses;
-double* p_history = 0;
+double p_history[MAX_DAYS];
 int h_count = 0;
-double* price_data;
+double price_data[MAX_DAYS];
 int sma_short = 20, sma_long = 50, rsi_period = 14;
-bool startChatbot(double** matrix, int& rows);
+bool startChatbot(double matrix[MAX_DAYS][5], int& rows);
 
 // ============================================================================
 // MODULE A: DATA MANAGEMENT
@@ -26,19 +27,15 @@ int getLength(string s) {
     return count;
 }
 
-double** loadMarketData(string filename, int &rows, int &cols) {
+void loadMarketData(double matrix[MAX_DAYS][5], int &rows, int &cols) {
     do {
-        cout << "\n[Module A] How many days of market data? (Minimum 2): ";
+        cout << "\n[Module A] How many days of market data? (Minimum 2, Max " << MAX_DAYS << "): ";
         cin >> rows;
         if (rows < 2) cout << " >> Error: You need at least 2 days of data for analysis." << endl;
-    } while (rows < 2);
+        if (rows > MAX_DAYS) cout << " >> Error: Max " << MAX_DAYS << " days allowed." << endl;
+    } while (rows < 2 || rows > MAX_DAYS);
 
     cols = 5;
-    double** priceMatrix = new double*[rows];
-    for (int i = 0; i < rows; i++) {
-        priceMatrix[i] = new double[cols];
-    }
-
     cin.ignore();
     cout << "\n[System] You can now PASTE your data rows below:\n";
     for (int i = 0; i < rows; i++) {
@@ -52,17 +49,16 @@ double** loadMarketData(string filename, int &rows, int &cols) {
                     string part = "";
                     for (int m = start; m < k; m++) part += line[m];
                     if (part != "") {
-                        priceMatrix[i][col++] = stod(part);
+                        matrix[i][col++] = stod(part);
                     }
                 }
                 start = k + 1;
             }
         }
     }
-    return priceMatrix;
 }
 
-void editMarketData(double** matrix, int rows) {
+void editMarketData(double matrix[MAX_DAYS][5], int rows) {
     char choice;
     cout << "\n[Module A] Do you want to edit any data? (y/n): ";
     cin >> choice;
@@ -85,21 +81,16 @@ void editMarketData(double** matrix, int rows) {
     }
 }
 
-void displayMarketTable(double** matrix, int rows) {
-    if (matrix == 0) return;
+void displayMarketTable(double matrix[MAX_DAYS][5], int rows) {
     cout << "\nDay\tOpen\tHigh\tLow\tClose\tVolume" << endl;
     int previewRows = (rows > 5) ? 5 : rows;
     for (int i = 0; i < previewRows; i++) {
         cout << i + 1 << "\t";
-        for (int j = 0; j < 5; j++) cout << matrix[i][j] << "\t";
+        for (int j = 0; j < 5; j++) {
+            cout << matrix[i][j] << "\t";
+        }
         cout << endl;
     }
-}
-
-void unloadMarketData(double** matrix, int rows) {
-    if (matrix == 0) return;
-    for (int i = 0; i < rows; i++) delete[] matrix[i];
-    delete[] matrix;
 }
 
 // ============================================================================
@@ -128,32 +119,28 @@ double RSI(int day, int period) {
     return 100 - (100 / (1 + rs));
 }
 
-int* generateSignals(double* prices, int daysCount) {
-    price_data = prices;
-    int* final_signals = new int[daysCount];
-
-    for (int i = 0; i < daysCount; i++) final_signals[i] = 0;
+void generateSignalsManual(double prices[MAX_DAYS], int daysCount, int signals[MAX_DAYS]) {
+    for (int i = 0; i < daysCount; i++) {
+        price_data[i] = prices[i];
+        signals[i] = 0;
+    }
     int start_day = (sma_long > rsi_period) ? sma_long : rsi_period;
     start_day++;
 
     for (int day = start_day; day < daysCount; day++) {
-        double prev_short = SMA(day - 1, sma_short);
-        double prev_long = SMA(day - 1, sma_long);
-        double curr_short = SMA(day, sma_short);
-        double curr_long = SMA(day, sma_long);
-        int sma_sig = 0;
-        if (prev_short <= prev_long && curr_short > curr_long) sma_sig = 1;
-        else if (prev_short >= prev_long && curr_short < curr_long) sma_sig = -1;
+        int sma_sig = 0, rsi_sig = 0;
+        double s_val = SMA(day, sma_short);
+        double l_val = SMA(day, sma_long);
+        if (s_val > l_val) sma_sig = 1;
+        else if (s_val < l_val) sma_sig = -1;
 
         double rsi_val = RSI(day, rsi_period);
-        int rsi_sig = 0;
         if (rsi_val < 30) rsi_sig = 1;
         else if (rsi_val > 70) rsi_sig = -1;
 
-        if ((sma_sig == 1 || rsi_sig == 1) && !(sma_sig == -1 || rsi_sig == -1)) final_signals[day] = 1;
-        else if ((sma_sig == -1 || rsi_sig == -1) && !(sma_sig == 1 || rsi_sig == 1)) final_signals[day] = -1;
+        if ((sma_sig == 1 || rsi_sig == 1) && !(sma_sig == -1 || rsi_sig == -1)) signals[day] = 1;
+        else if ((sma_sig == -1 || rsi_sig == -1) && !(sma_sig == 1 || rsi_sig == 1)) signals[day] = -1;
     }
-    return final_signals;
 }
 
 void configureStrategy(int totalDays) {
@@ -184,41 +171,38 @@ void configureStrategy(int totalDays) {
 // MODULE C: BACKTESTING ENGINE
 // ============================================================================
 
-void runBacktest(const double* prices, const int* signals, int daysCount, double initialCapital, double initialShares, double prevPortfolio, double results[], double history[]) {
-    double cash = initialCapital, shares = initialShares, portfolio_value, previous_portfolio = prevPortfolio, max_drawdown = 0, sum_returns = 0, sum_squared = 0, peak = initialCapital, total_profit = 0, total_loss = 0, buy_price = 0;
+void runBacktest(double prices[MAX_DAYS], int signals[MAX_DAYS], int daysCount, double initialCapital, double initialShares, double prevPortfolio, double results[], double history[]) {
+    double cash = initialCapital, shares = initialShares, portfolio_value, max_drawdown = 0, peak = initialCapital, total_profit = 0, total_loss = 0, buy_price = 0;
     int total_trades = 0, wins = 0, losses = 0;
 
-    for(int day = 0; day < daysCount; day++) {
-        double price = prices[day];
-        if(signals[day] == 1 && shares == 0 && price > 0) {
-            shares = cash / price; cash = 0; buy_price = price;
-        } else if(signals[day] == -1 && shares > 0) {
-            cash = shares * price;
-            double profit = (price - buy_price) * shares;
-            total_trades++;
-            if(profit > 0) { wins++; total_profit += profit; }
-            else { losses++; total_loss += -profit; }
-            shares = 0;
+    for (int day = 0; day < daysCount; day++) {
+        double current_price = prices[day];
+        int signal = signals[day];
+        
+        if (signal == 1 && cash > 0) {
+            shares = cash / current_price;
+            cash = 0; buy_price = current_price;
+        } else if (signal == -1 && shares > 0) {
+            cash = shares * current_price;
+            if (current_price > buy_price) { total_profit += (current_price - buy_price); wins++; }
+            else { total_loss += (buy_price - current_price); losses++; }
+            shares = 0; total_trades++;
         }
-        portfolio_value = cash + (shares * price);
+        portfolio_value = cash + (shares * current_price);
+        if (portfolio_value > peak) peak = portfolio_value;
+        double dd = ((peak - portfolio_value) / peak) * 100;
+        if (dd > max_drawdown) max_drawdown = dd;
         history[day] = portfolio_value;
-        double daily_return = (previous_portfolio != 0) ? (portfolio_value - previous_portfolio) / previous_portfolio : 0;
-        sum_returns += daily_return; sum_squared += daily_return * daily_return;
-        previous_portfolio = portfolio_value;
-        if(portfolio_value > peak) peak = portfolio_value;
-        double dd = (peak - portfolio_value) / peak;
-        if(dd > max_drawdown) max_drawdown = dd;
     }
-
-    results[0] = initialCapital; results[1] = portfolio_value; results[2] = ((portfolio_value/initialCapital)-1)*100.0;
-    results[3] = (daysCount >= 30) ? (pow((portfolio_value/initialCapital), (365.0/daysCount))-1)*100.0 : results[2];
-    double mean_ret = sum_returns / daysCount;
-    double std_dev = sqrt((sum_squared/daysCount) - (mean_ret*mean_ret));
-    results[4] = (std_dev != 0) ? mean_ret/std_dev : 0;
-    results[5] = max_drawdown * 100.0; results[6] = (double)total_trades;
-    results[7] = (total_trades > 0) ? ((double)wins/total_trades)*100.0 : 0;
-    results[8] = (wins > 0) ? total_profit/wins : 0; results[9] = (losses > 0) ? total_loss/losses : 0;
-    results[10] = (total_loss > 0) ? total_profit/total_loss : 0;
+    results[0] = initialCapital; results[1] = portfolio_value;
+    results[2] = ((portfolio_value - initialCapital) / initialCapital) * 100;
+    results[3] = results[2] / (daysCount / 365.0);
+    results[4] = (results[2] / 100.0) / (max_drawdown / 100.0);
+    results[5] = max_drawdown; results[6] = total_trades;
+    results[7] = (total_trades > 0) ? (wins * 100.0 / total_trades) : 0;
+    results[8] = (wins > 0) ? total_profit / wins : 0;
+    results[9] = (losses > 0) ? total_loss / losses : 0;
+    results[10] = (total_loss > 0) ? total_profit / total_loss : 0;
 }
 
 // ============================================================================
@@ -226,8 +210,8 @@ void runBacktest(const double* prices, const int* signals, int daysCount, double
 // ============================================================================
 
 void setModuleCData(double* metrics, double* hist, int cnt) {
-    if (metrics == 0) return;
-    p_history = hist; h_count = cnt;
+    for(int i=0; i<cnt; i++) p_history[i] = hist[i];
+    h_count = cnt;
     capital = metrics[0]; finalVal = metrics[1]; totalReturn = metrics[2]; annualReturn = metrics[3];
     sharpe = metrics[4]; drawdown = metrics[5]; totalTrades = (int)metrics[6]; winRate = metrics[7];
     avgProfit = metrics[8]; avgLoss = metrics[9]; profitFactor = metrics[10];
@@ -282,7 +266,7 @@ bool findKeyword(string text, string key) {
     return false;
 }
 
-bool startChatbot(double** matrix, int& rows) {
+bool startChatbot(double matrix[MAX_DAYS][5], int& rows) {
     cout << "\n      ___   __             ________          __  __          __  \n";
     cout << "     /   | / /____ _____  / ____/ /_  ____ _/ /_/ /_  ____  / /_ \n";
     cout << "    / /| |/ / __ `/ __ \\ / /   / __ \\/ __ `/ __/ __ \\/ __ \\/ __/ \n";
@@ -292,23 +276,23 @@ bool startChatbot(double** matrix, int& rows) {
     string userCmd;
     bool isActive = true;
 
-    int numCats = 4;
-    string* catNames = new string[numCats]{"Returns", "Risk Metrics", "Trade Stats", "Settings & Data"};
-    int* catCounts = new int[numCats]{2, 2, 5, 4};
-    
-    string** helpMap = new string*[numCats];
-    helpMap[0] = new string[2]{"totalreturn - Show total return", "profit      - Show annual profit"};
-    helpMap[1] = new string[2]{"sharpe      - Show Sharpe ratio", "drawdown    - Show max drawdown"};
-    helpMap[2] = new string[5]{"losing      - Show losing trades", "winning     - Show winning trades", "tradecount  - Show trade count", "winrate     - Show win rate %", "advice      - Get strategy advice"};
-    helpMap[3] = new string[4]{"edit        - Edit market data", "settings    - Change strategy params", "retest      - Update results", "exit        - Close the chat"};
+    const int NUM_CATS = 4;
+    string catNames[NUM_CATS] = {"Returns", "Risk Metrics", "Trade Stats", "Settings & Data"};
+    int catCounts[NUM_CATS] = {2, 2, 5, 4};
+    string helpItems[NUM_CATS][5] = {
+        {"totalreturn", "profit", "", "", ""},
+        {"sharpe", "drawdown", "", "", ""},
+        {"losing", "winning", "tradecount", "winrate", "advice"},
+        {"edit", "settings", "retest", "exit", ""}
+    };
 
     cout << "\n+---------------------------------------------------------+" << endl;
     cout << "|              DYNAMIC COMMAND HELP MENU                  |" << endl;
     cout << "+---------------------------------------------------------+" << endl;
-    for (int i = 0; i < numCats; i++) {
-        cout << " [" << catNames[i] << "]" << endl;
-        for (int j = 0; j < catCounts[i]; j++) {
-            cout << "  * " << helpMap[i][j] << endl;
+    for (int i = 0; i < NUM_CATS; i++) {
+        cout << " [" << *(catNames + i) << "]" << endl;
+        for (int j = 0; j < *(catCounts + i); j++) {
+            cout << "  * " << *(*(helpItems + i) + j) << endl;
         }
         cout << endl;
     }
@@ -321,28 +305,13 @@ bool startChatbot(double** matrix, int& rows) {
         }
         
         if (findKeyword(userCmd, "exit") || findKeyword(userCmd, "quit") || findKeyword(userCmd, "bye")) isActive = false;
-        else if (findKeyword(userCmd, "hello") || findKeyword(userCmd, "hi")) cout << "Hello! I am your AlgoB assistant. How can I help with your strategy today?" << endl;
         else if (findKeyword(userCmd, "return") || findKeyword(userCmd, "profit")) 
             cout << "Analysis: Total Return is " << totalReturn << "% and Annual Profit is Rs." << formatPKR((totalReturn/100)*capital) << "." << endl;
         else if (findKeyword(userCmd, "sharpe")) cout << "Risk-Adjusted: Your Sharpe Ratio is " << sharpe << "." << endl;
         else if (findKeyword(userCmd, "drawdown") || findKeyword(userCmd, "risk")) cout << "Risk: Max Drawdown reached " << drawdown << "% during the test." << endl;
-        else if (findKeyword(userCmd, "win") && !findKeyword(userCmd, "rate")) cout << "Stats: You had " << wins << " winning trades." << endl;
-        else if (findKeyword(userCmd, "lose") || findKeyword(userCmd, "losing")) cout << "Stats: You had " << losses << " losing trades." << endl;
         else if (findKeyword(userCmd, "winrate") || findKeyword(userCmd, "accuracy")) cout << "Accuracy: Your Win Rate is " << winRate << "%." << endl;
         else if (findKeyword(userCmd, "tradecount") || findKeyword(userCmd, "trades")) cout << "Volume: A total of " << totalTrades << " trades were executed." << endl;
-        else if (findKeyword(userCmd, "help") || findKeyword(userCmd, "menu")) {
-            cout << "\n+---------------------------------------------------------+" << endl;
-            cout << "|              DYNAMIC COMMAND HELP MENU                  |" << endl;
-            cout << "+---------------------------------------------------------+" << endl;
-            for (int i = 0; i < numCats; i++) {
-                cout << " [" << catNames[i] << "]" << endl;
-                for (int j = 0; j < catCounts[i]; j++) cout << "  * " << helpMap[i][j] << endl;
-                cout << endl;
-            }
-            cout << "+---------------------------------------------------------+" << endl;
-        }
-        else if (findKeyword(userCmd, "advice") || findKeyword(userCmd, "suggest")) {
-            cout << "\n[AlgoB Advice Engine]" << endl;
+        else if (findKeyword(userCmd, "advice")) {
             if (totalReturn < 0) cout << " > Warning: Strategy is losing money. Try increasing SMA Long Period." << endl;
             if (drawdown > 15) cout << " > Warning: High Drawdown (" << drawdown << "%). Strategy is too aggressive." << endl;
             if (winRate < 45) cout << " > Tip: Low Win Rate. Try increasing RSI Period." << endl;
@@ -359,8 +328,6 @@ bool startChatbot(double** matrix, int& rows) {
             cout << "\n[System] Settings updated. Type 'retest' to see impact." << endl;
         }
         else if (findKeyword(userCmd, "retest") || findKeyword(userCmd, "update") || findKeyword(userCmd, "run")) {
-            for (int i = 0; i < numCats; i++) delete[] helpMap[i];
-            delete[] helpMap; delete[] catNames; delete[] catCounts;
             return true; 
         }
         else if (findKeyword(userCmd, "compare") || findKeyword(userCmd, "chart")) showVisualChart();
@@ -368,9 +335,6 @@ bool startChatbot(double** matrix, int& rows) {
         
         if (isActive) cout << "\n > You: ";
     }
-
-    for (int i = 0; i < numCats; i++) delete[] helpMap[i];
-    delete[] helpMap; delete[] catNames; delete[] catCounts;
     return false;
 }
 
@@ -395,29 +359,29 @@ int main() {
         if (initialCapital < 1000) cout << " >> Error: You need at least 1000 PKR to trade." << endl;
     } while (initialCapital < 1000);
 
-    int rows = 0, cols = 0;
-    double** marketData = loadMarketData("", rows, cols);
+    double marketData[MAX_DAYS][5];
+    int rows, cols;
+    loadMarketData(marketData, rows, cols);
     configureStrategy(rows);
 
     displayMarketTable(marketData, rows);
 
     bool redo;
     do {
-        double* closePrices = new double[rows];
+        double closePrices[MAX_DAYS];
         for (int i = 0; i < rows; i++) closePrices[i] = marketData[i][3];
 
-        int* signals = generateSignals(closePrices, rows);
-        double finalMetrics[METRICS_COUNT], *equityHistory = new double[rows];
+        int signals[MAX_DAYS];
+        generateSignalsManual(closePrices, rows, signals);
+        double finalMetrics[METRICS_COUNT];
+        double equityHistory[MAX_DAYS];
 
         runBacktest(closePrices, signals, rows, initialCapital, 0.0, initialCapital, finalMetrics, equityHistory);
         setModuleCData(finalMetrics, equityHistory, rows);
         
         displaySummary();
         redo = startChatbot(marketData, rows);
-
-        delete[] signals; delete[] closePrices; delete[] equityHistory;
     } while (redo);
-    unloadMarketData(marketData, rows);
     
     cout << "\nProgram terminated. Goodbye, Have a Nice Trading Journey!" << endl;
     
