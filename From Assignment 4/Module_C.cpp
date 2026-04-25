@@ -2,6 +2,8 @@
 #include <cmath>
 using namespace std;
 
+const int MAX_DAYS = 1000;
+
 void performFinalCalculations(int days_count, double portfolio_value, double initial_capital, double sum_returns, double sum_squared, int total_trades, int wins, int losses, double total_profit, double total_loss, double &final_value, double &total_return, double &annualized_return, double &sharpe_ratio, double &win_rate, double &avg_profit, double &avg_loss, double &profit_factor) 
     {
         final_value = portfolio_value;
@@ -42,7 +44,7 @@ void performFinalCalculations(int days_count, double portfolio_value, double ini
         }
     }
 
-void runBacktest(const double* prices, const int* signals, int daysCount, double initialCapital, double initialShares, double prevPortfolio, double results[], double history[])
+void runBacktest(double prices[MAX_DAYS], int signals[MAX_DAYS], int daysCount, double initialCapital, double initialShares, double prevPortfolio, double results[], double history[])
     {
         int days_count = daysCount, signal, total_trades = 0, wins = 0, losses = 0;
     

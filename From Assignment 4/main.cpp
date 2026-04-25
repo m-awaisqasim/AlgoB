@@ -15,7 +15,6 @@ double p_history[MAX_DAYS];
 int h_count = 0;
 double price_data[MAX_DAYS];
 int sma_short = 20, sma_long = 50, rsi_period = 14;
-bool startChatbot(double matrix[MAX_DAYS][5], int& rows);
 
 // ============================================================================
 // MODULE A: DATA MANAGEMENT

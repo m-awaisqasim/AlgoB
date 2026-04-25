@@ -2,25 +2,23 @@
 #include <string>
 using namespace std;
 
+const int MAX_DAYS = 1000;
+
 int getLength(string s) {
     int count = 0;
     while (s[count] != '\0') count++;
     return count;
 }
 
-double** loadMarketData(string filename, int &rows, int &cols) {
+void loadMarketData(double matrix[MAX_DAYS][5], int &rows, int &cols) {
     do {
-        cout << "\n[Module A] How many days of market data? (Minimum 2): ";
+        cout << "\n[Module A] How many days of market data? (Minimum 2, Max " << MAX_DAYS << "): ";
         cin >> rows;
         if (rows < 2) cout << " >> Error: You need at least 2 days of data for analysis." << endl;
-    } while (rows < 2);
+        if (rows > MAX_DAYS) cout << " >> Error: Max " << MAX_DAYS << " days allowed." << endl;
+    } while (rows < 2 || rows > MAX_DAYS);
 
     cols = 5;
-    double** priceMatrix = new double*[rows];
-    for (int i = 0; i < rows; i++) {
-        priceMatrix[i] = new double[cols];
-    }
-
     cin.ignore();
     cout << "\n[System] You can now PASTE your data rows below:\n";
     for (int i = 0; i < rows; i++) {
@@ -34,17 +32,16 @@ double** loadMarketData(string filename, int &rows, int &cols) {
                     string part = "";
                     for (int m = start; m < k; m++) part += line[m];
                     if (part != "") {
-                        priceMatrix[i][col++] = stod(part);
+                        matrix[i][col++] = stod(part);
                     }
                 }
                 start = k + 1;
             }
         }
     }
-    return priceMatrix;
 }
 
-void editMarketData(double** matrix, int rows) {
+void editMarketData(double matrix[MAX_DAYS][5], int rows) {
     char choice;
     cout << "\n[Module A] Do you want to edit any data? (y/n): ";
     cin >> choice;
@@ -67,19 +64,14 @@ void editMarketData(double** matrix, int rows) {
     }
 }
 
-void displayMarketTable(double** matrix, int rows) {
-    if (matrix == 0) return;
+void displayMarketTable(double matrix[MAX_DAYS][5], int rows) {
     cout << "\nDay\tOpen\tHigh\tLow\tClose\tVolume" << endl;
     int previewRows = (rows > 5) ? 5 : rows;
     for (int i = 0; i < previewRows; i++) {
         cout << i + 1 << "\t";
-        for (int j = 0; j < 5; j++) cout << matrix[i][j] << "\t";
+        for (int j = 0; j < 5; j++) {
+            cout << matrix[i][j] << "\t";
+        }
         cout << endl;
     }
-}
-
-void unloadMarketData(double** matrix, int rows) {
-    if (matrix == 0) return;
-    for (int i = 0; i < rows; i++) delete[] matrix[i];
-    delete[] matrix;
 }
