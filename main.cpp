@@ -35,7 +35,6 @@ void loadMarketData(double matrix[MAX_DAYS][5], int &rows, int &cols) {
     } while (rows < 2 || rows > MAX_DAYS);
 
     cols = 5;
-    cin.ignore();
     cout << "\n[System] You can now PASTE your data rows below:\n";
     for (int i = 0; i < rows; i++) {
         string line;
