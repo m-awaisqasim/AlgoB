@@ -1,6 +1,5 @@
 #include <iostream>
 #include <string>
-#include <cmath>
 using namespace std;
 
 const int METRICS_COUNT = 11;
@@ -11,8 +10,6 @@ const int MAX_DAYS = 1000;
 // ============================================================================
 double capital, finalVal, totalReturn, annualReturn, sharpe, drawdown, winRate, avgProfit, avgLoss, profitFactor;
 int totalTrades, wins, losses;
-double p_history[MAX_DAYS];
-int h_count = 0;
 double price_data[MAX_DAYS];
 int sma_short = 6, sma_long = 15, rsi_period = 5;
 
@@ -91,7 +88,7 @@ void displayMarketTable(double matrix[MAX_DAYS][5], int rows) {
     else {
         previewRows = rows;
     }
-    for (int i = 0; i < previewRows; i++) {
+    for (int i = 1; i < previewRows; i++) {
         cout << "|  " << i + 1;
         cout << "  |";
         for (int j = 0; j < 5; j++) {
@@ -188,52 +185,105 @@ void configureStrategy(int totalDays) {
 // MODULE C: BACKTESTING ENGINE
 // ============================================================================
 
-void runBacktest(double prices[MAX_DAYS], int signals[MAX_DAYS], int daysCount, double initialCapital, double initialShares, double prevPortfolio, double results[], double history[]) {
-    double cash = initialCapital, shares = initialShares, portfolio_value, max_drawdown = 0, peak = initialCapital, total_profit = 0, total_loss = 0, buy_price = 0;
-    int total_trades = 0, wins = 0, losses = 0;
-
-    for (int day = 0; day < daysCount; day++) {
-        double current_price = prices[day];
-        int signal = signals[day];
-        
-        if (signal == 1 && cash > 0) {
-            shares = cash / current_price;
-            cash = 0; buy_price = current_price;
-        } else if (signal == -1 && shares > 0) {
-            cash = shares * current_price;
-            if (current_price > buy_price) { total_profit += (current_price - buy_price); wins++; }
-            else { total_loss += (buy_price - current_price); losses++; }
-            shares = 0; total_trades++;
+void performFinalCalculations(int days_count, double portfolio_value, double initial_capital, double sum_returns, double sum_squared, int total_trades, int wins, int losses, double total_profit, double total_loss, double &final_value, double &total_return, double &annualized_return, double &sharpe_ratio, double &win_rate, double &avg_profit, double &avg_loss, double &profit_factor) {
+    final_value = portfolio_value;
+    total_return = (final_value / initial_capital) - 1;
+    
+    if (days_count >= 30) {
+        double base = (1 + total_return);
+        double Exp = 365.0 / days_count;
+        annualized_return = 1;
+        for (int i = 1; i <= Exp; i++) {
+            annualized_return = annualized_return * base;  
         }
-        portfolio_value = cash + (shares * current_price);
-        if (portfolio_value > peak) peak = portfolio_value;
-        double dd = ((peak - portfolio_value) / peak) * 100;
-        if (dd > max_drawdown) max_drawdown = dd;
-        history[day] = portfolio_value;
+        annualized_return = annualized_return - 1;
+    } else {
+        annualized_return = total_return;  
     }
-    results[0] = initialCapital; 
-    results[1] = portfolio_value;
-    results[2] = ((portfolio_value - initialCapital) / initialCapital) * 100;
-    results[3] = results[2] / (daysCount / 365.0);
-    results[4] = (results[2] / 100.0) / (max_drawdown / 100.0);
-    results[5] = max_drawdown; 
+    
+    double mean_return = sum_returns / days_count;    
+    double variance = (sum_squared / days_count) - (mean_return * mean_return);  
+    if (variance < 0) variance = 0;
+    double std_dev = variance; 
+    for (int i = 0; i < 20; i++) {
+        if (std_dev > 0) 
+            std_dev = 0.5 * (std_dev + variance / std_dev);
+    } 
+
+    if (std_dev != 0) 
+        sharpe_ratio = mean_return / std_dev; 
+    if (total_trades > 0) 
+        win_rate = (double)wins / total_trades;
+    if (wins > 0) 
+        avg_profit = total_profit / wins;
+    if (losses > 0) 
+        avg_loss = total_loss / losses;
+    if (total_loss > 0) 
+        profit_factor = total_profit / total_loss;
+}
+
+void runBacktest(double prices[MAX_DAYS], int signals[MAX_DAYS], int daysCount, double initialCapital, double initialShares, double prevPortfolio, double results[]) {
+    int days_count = daysCount, total_trades = 0, wins = 0, losses = 0;
+    double cash = initialCapital, shares = initialShares, price, portfolio_value, previous_portfolio = prevPortfolio, max_drawdown = 0, total_return, annualized_return, sum_returns = 0, sum_squared = 0, initial_capital = initialCapital, peak = initial_capital, final_value, sharpe_ratio = 0, total_profit = 0, total_loss = 0, buy_price = 0, win_rate = 0, avg_profit = 0, avg_loss = 0, profit_factor = 0, daily_return;
+
+    for (int day = 0; day < days_count; day++) {
+        price = prices[day];      
+        int signal = signals[day];  
+        
+        if (signal == 1 && shares == 0 && price > 0) {
+            shares = cash / price; 
+            cash = cash - shares * price; 
+            buy_price = price; 
+        } else if (signal == -1 && shares > 0) {
+            cash = cash + shares * price; 
+            double profit = (price - buy_price) * shares;
+            total_trades = total_trades + 1;
+            if (profit > 0) {
+                wins = wins + 1;
+                total_profit += profit;
+            } else {
+                losses = losses + 1;
+                total_loss += -profit;
+            }
+            shares = 0;  
+        }
+
+        portfolio_value = cash + (shares * price);
+        if (previous_portfolio != 0) daily_return = (portfolio_value - previous_portfolio) / previous_portfolio;
+        else daily_return = 0;
+
+        sum_returns += daily_return; 
+        sum_squared += daily_return * daily_return; 
+        previous_portfolio = portfolio_value; 
+
+        if (portfolio_value > peak) peak = portfolio_value;
+        double drawdown = (peak - portfolio_value) / peak; 
+        if (drawdown > max_drawdown) max_drawdown = drawdown; 
+    }
+            
+    performFinalCalculations(days_count, portfolio_value, initial_capital, sum_returns, sum_squared, total_trades, wins, losses, total_profit, total_loss, final_value, total_return, annualized_return, sharpe_ratio, win_rate, avg_profit, avg_loss, profit_factor);
+
+    results[0] = initial_capital;
+    results[1] = final_value;
+    results[2] = total_return * 100;
+    results[3] = annualized_return * 100;
+    results[4] = sharpe_ratio;
+    results[5] = max_drawdown * 100;
     results[6] = total_trades;
-    results[7] = (total_trades > 0) ? (wins * 100.0 / total_trades) : 0;
-    results[8] = (wins > 0) ? total_profit / wins : 0;
-    results[9] = (losses > 0) ? total_loss / losses : 0;
-    results[10] = (total_loss > 0) ? total_profit / total_loss : 0;
+    results[7] = win_rate * 100;
+    results[8] = avg_profit;
+    results[9] = avg_loss;
+    results[10] = profit_factor;
 }
 
 // ============================================================================
 // MODULE D: PERFORMANCE UI & CHATBOT
 // ============================================================================
 
-void setModuleCData(double* metrics, double* hist, int cnt) {
-    for(int i=0; i<cnt; i++) p_history[i] = hist[i];
-    h_count = cnt;
-    capital = metrics[0]; finalVal = metrics[1]; totalReturn = metrics[2]; annualReturn = metrics[3];
-    sharpe = metrics[4]; drawdown = metrics[5]; totalTrades = (int)metrics[6]; winRate = metrics[7];
-    avgProfit = metrics[8]; avgLoss = metrics[9]; profitFactor = metrics[10];
+void setModuleCData(double* results) {
+    capital = results[0]; finalVal = results[1]; totalReturn = results[2]; annualReturn = results[3];
+    sharpe = results[4]; drawdown = results[5]; totalTrades = (int)results[6]; winRate = results[7];
+    avgProfit = results[8]; avgLoss = results[9]; profitFactor = results[10];
     wins = (int)((winRate / 100.0) * totalTrades + 0.5); losses = totalTrades - wins;
 }
 
@@ -417,11 +467,10 @@ int main() {
 
         int signals[MAX_DAYS];
         generateSignalsManual(closePrices, rows, signals);
-        double finalMetrics[METRICS_COUNT];
-        double equityHistory[MAX_DAYS];
+        double results[METRICS_COUNT];
 
-        runBacktest(closePrices, signals, rows, initialCapital, 0.0, initialCapital, finalMetrics, equityHistory);
-        setModuleCData(finalMetrics, equityHistory, rows);
+        runBacktest(closePrices, signals, rows, initialCapital, 0.0, initialCapital, results);
+        setModuleCData(results);
         
         displaySummary();
         redo = startChatbot(marketData, rows);
