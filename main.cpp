@@ -1,5 +1,4 @@
 #include <iostream>
-#include <string>
 using namespace std;
 
 const int METRICS_COUNT = 11;
@@ -82,12 +81,7 @@ void displayMarketTable(double matrix[MAX_DAYS][5], int rows) {
     cout << "| Day |     Open      |     High      |      Low      |     Close     |    Volume     |" << endl;
     cout << "+-----+---------------+---------------+---------------+---------------+---------------+" << endl;
     int previewRows;
-    if (rows > 5) {
-        previewRows = 5;
-    }
-    else {
-        previewRows = rows;
-    }
+    previewRows = (rows > 5) ? 5 : rows;
     for (int i = 1; i < previewRows; i++) {
         cout << "|  " << i + 1;
         cout << "  |";
@@ -203,7 +197,6 @@ void performFinalCalculations(int days_count, double portfolio_value, double ini
     
     double mean_return = sum_returns / days_count;    
     double variance = (sum_squared / days_count) - (mean_return * mean_return);  
-    if (variance < 0) variance = 0;
     double std_dev = variance; 
     for (int i = 0; i < 20; i++) {
         if (std_dev > 0) 
