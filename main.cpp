@@ -315,7 +315,11 @@ void displaySummary() {
 void showVisualChart() {
     string labels[3] = {"Returns ", "Win Rate", "Safety  "};
     double values[3] = {totalReturn, winRate, (100.0 - drawdown)};
-    string bars[3] = {">>>>", "####", "===="};
+    char bars[3][5] = {
+        {'>', '>', '>', '>', '\0'},
+        {'#', '#', '#', '#', '\0'},
+        {'=', '=', '=', '=', '\0'}
+    };
     cout << endl;
     cout << "  +----------------------------------------------------+" << endl;
     cout << "  |         PERFORMANCE VISUALIZATION BOARD            |" << endl;
@@ -333,6 +337,22 @@ void showVisualChart() {
     }
     cout << "  +----------------------------------------------------+" << endl;
 }
+
+// bool findKeyword(string text, string key) {
+//     int textLength = getLength(text);
+//     int keyLength = getLength(key);
+
+//     if (keyLength > textLength) return false;
+
+//     for (int i = 0; i <= textLength - keyLength; i++) {
+//         int j = 0;
+//         while (j < keyLength && text[i + j] == key[j]) {
+//             j++;
+//         }
+//         if (j == keyLength) return true;
+//     }
+//     return false;
+// }
 
 bool findKeyword(string text, string key) {
     if (getLength(key) > getLength(text)) return false;
