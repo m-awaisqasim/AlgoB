@@ -1,5 +1,4 @@
 #include <iostream>
-#include <string>
 using namespace std;
 
 const int MAX_DAYS = 1000;
@@ -78,9 +77,7 @@ void displayMarketTable(double matrix[MAX_DAYS][5], int rows) {
     }
     for (int i = 0; i < previewRows; i++) {
         cout << "|  " << i + 1;
-        if (i + 1 < 10) cout << "  |";
-        else if (i + 1 < 100) cout << " |";
-        else cout << "|";
+        cout << "  |";
         for (int j = 0; j < 5; j++) {
             cout << "\t" << matrix[i][j] << "\t";
         }
