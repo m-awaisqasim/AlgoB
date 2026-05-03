@@ -338,22 +338,6 @@ void showVisualChart() {
     cout << "  +----------------------------------------------------+" << endl;
 }
 
-// bool findKeyword(string text, string key) {
-//     int textLength = getLength(text);
-//     int keyLength = getLength(key);
-
-//     if (keyLength > textLength) return false;
-
-//     for (int i = 0; i <= textLength - keyLength; i++) {
-//         int j = 0;
-//         while (j < keyLength && text[i + j] == key[j]) {
-//             j++;
-//         }
-//         if (j == keyLength) return true;
-//     }
-//     return false;
-// }
-
 bool findKeyword(string text, string key) {
     if (getLength(key) > getLength(text)) return false;
     for (int i = 0; i <= (getLength(text) - getLength(key)); i++) {
@@ -410,8 +394,7 @@ bool startChatbot(double matrix[MAX_DAYS][5], int& rows) {
         }
         
         if (findKeyword(userCmd, "exit") || findKeyword(userCmd, "quit") || findKeyword(userCmd, "bye")) isActive = false;
-        else if (findKeyword(userCmd, "return") || findKeyword(userCmd, "profit")) 
-            cout << "Analysis: Total Return is " << totalReturn << "% and Annual Profit is Rs." << formatPKR((totalReturn/100)*capital) << "." << endl;
+        else if (findKeyword(userCmd, "return") || findKeyword(userCmd, "profit")) cout << "Analysis: Total Return is " << totalReturn << "% and Annual Profit is Rs." << formatPKR((totalReturn/100)*capital) << "." << endl;
         else if (findKeyword(userCmd, "sharpe")) cout << "Risk-Adjusted: Your Sharpe Ratio is " << sharpe << "." << endl;
         else if (findKeyword(userCmd, "drawdown") || findKeyword(userCmd, "risk")) cout << "Risk: Max Drawdown reached " << drawdown << "% during the test." << endl;
         else if (findKeyword(userCmd, "winrate") || findKeyword(userCmd, "accuracy")) cout << "Accuracy: Your Win Rate is " << winRate << "%." << endl;
@@ -422,7 +405,7 @@ bool startChatbot(double matrix[MAX_DAYS][5], int& rows) {
             if (winRate < 45) cout << " > Tip: Low Win Rate. Try increasing RSI Period." << endl;
             if (profitFactor > 1.3 && totalReturn > 5) cout << " > Success: Solid metrics. This strategy shows good alpha!" << endl;
             if (totalTrades < 3) cout << " > Note: Low trade count. Strategy hasn't traded enough for a solid statistical conclusion." << endl;
-            else if (totalTrades < 10) cout << " > Note: Small sample size. These results may not be consistent over long periods." << endl;
+            else if (totalTrades < 5) cout << " > Note: Small sample size. These results may not be consistent over long periods." << endl;
         }
         else if (findKeyword(userCmd, "edit")) {
             editMarketData(matrix, rows);
